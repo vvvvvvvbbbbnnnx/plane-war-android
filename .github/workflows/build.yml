@@ -11,7 +11,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Build APK
+    - name: Build APK with Buildozer
       uses: ArtemSBulgakov/buildozer-action@v1
       id: buildozer
       with:
@@ -22,4 +22,4 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: plane_war_apk
-        path: bin/*.apk
+        path: ${{ steps.buildozer.outputs.filename }}
