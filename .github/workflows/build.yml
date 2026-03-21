@@ -11,15 +11,22 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Build APK with Buildozer
-      uses: ArtemSBulgakov/buildozer-action@v1
-      id: buildozer
+    - name: Set up Python
+      uses: actions/setup-python@v5
       with:
-        workdir: .
-        command: android debug
+        python-version: '3.11'
+
+    - name: Install Buildozer
+      run: |
+        pip install buildozer
+        pip install cython
+
+    - name: Build APK
+      run: |
+        buildozer android debug
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: plane_war_apk
-        path: ${{ steps.buildozer.outputs.filename }}
+        path: bin/*.apk
