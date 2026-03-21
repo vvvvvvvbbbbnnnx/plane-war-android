@@ -8,18 +8,10 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    container:
+      image: kivy/buildozer:latest
     steps:
     - uses: actions/checkout@v4
-
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
-
-    - name: Install Buildozer
-      run: |
-        pip install buildozer
-        pip install cython
 
     - name: Build APK
       run: |
