@@ -15,9 +15,30 @@ from kivy.properties import NumericProperty, StringProperty
 from kivy.core.window import Window
 from kivy.metrics import dp, sp
 from kivy.utils import platform
-from kivy.atlas import Atlas
+from kivy.resources import resource_find
 import random
 import os
+
+
+def get_asset_path(filename):
+    """获取资源文件的正确路径"""
+    # 尝试多种路径
+    paths_to_try = [
+        filename,  # 当前目录
+        os.path.join(os.path.dirname(__file__), filename),  # 脚本目录
+        os.path.join('assets', filename),  # assets 目录
+    ]
+
+    for path in paths_to_try:
+        if os.path.exists(path):
+            return path
+
+    # 使用 Kivy 资源查找
+    resource = resource_find(filename)
+    if resource:
+        return resource
+
+    return None
 
 
 class ScreenAdapter:
@@ -55,22 +76,50 @@ class ScreenAdapter:
 screen = ScreenAdapter()
 
 
-class SpriteImage(Image):
-    """精灵图片基类"""
-    def __init__(self, source, **kwargs):
-        super().__init__(source=source, **kwargs)
+class SpriteWidget(Widget):
+    """精灵组件基类 - 支持图片和线条两种模式"""
+
+    def __init__(self, image_source=None, **kwargs):
+        super().__init__(**kwargs)
         self.size_hint = (None, None)
-        self.allow_stretch = True
-        self.keep_ratio = True
+        self.image_source = image_source
+        self.image_widget = None
+        self.use_image = False
+
+        # 尝试加载图片
+        if image_source:
+            asset_path = get_asset_path(image_source)
+            if asset_path:
+                self.image_widget = Image(source=asset_path, size=self.size, pos=self.pos,
+                                         allow_stretch=True, keep_ratio=True)
+                self.use_image = True
 
     def set_size_rel(self, w_ratio, h_ratio):
         self.size = (screen.rel_w(w_ratio), screen.rel_h(h_ratio))
+        if self.image_widget:
+            self.image_widget.size = self.size
+
+    def update_position(self):
+        if self.image_widget:
+            self.image_widget.pos = self.pos
+
+    def add_to_parent(self, parent):
+        """添加到父组件"""
+        if self.use_image and self.image_widget:
+            parent.add_widget(self.image_widget)
+        parent.add_widget(self)
+
+    def remove_from_parent(self, parent):
+        """从父组件移除"""
+        if self.use_image and self.image_widget:
+            parent.remove_widget(self.image_widget)
+        parent.remove_widget(self)
 
 
-class Player(SpriteImage):
+class Player(SpriteWidget):
     """玩家飞机"""
     def __init__(self, **kwargs):
-        super().__init__(source='player.png', **kwargs)
+        super().__init__(image_source='player.png', **kwargs)
         self.set_size_rel(0.12, 0.08)
         self.health = 3
         self.max_health = 3
@@ -81,26 +130,72 @@ class Player(SpriteImage):
         self.invincible_time = 0
         self.speed = screen.scale * 8
 
-    def update_visual(self):
-        # 无敌闪烁效果
-        if self.invincible:
-            self.opacity = 0.5 if int(Clock.get_time() * 10) % 2 else 1.0
-        else:
-            self.opacity = 1.0
+    def draw_ship(self):
+        """绘制飞机 - 图片模式或线条模式"""
+        if self.use_image:
+            self.update_position()
+            # 无敌闪烁效果
+            if self.invincible:
+                self.image_widget.opacity = 0.5 if int(Clock.get_time() * 10) % 2 else 1.0
+            else:
+                self.image_widget.opacity = 1.0
+            return
+
+        # 线条绘制模式
+        self.canvas.clear()
+        with self.canvas:
+            w, h = self.size
+            # 主体
+            Color(0.2, 1, 1, 1)
+            body_points = [
+                (self.center_x, self.top),
+                (self.x + w * 0.17, self.y + h * 0.25),
+                (self.x + w * 0.08, self.y),
+                (self.right - w * 0.08, self.y),
+                (self.right - w * 0.17, self.y + h * 0.25),
+            ]
+            Line(points=body_points, width=screen.dp(2), close=True)
+
+            # 机翼
+            Color(0.2, 0.6, 1, 1)
+            left_wing = [
+                (self.x + w * 0.17, self.y + h * 0.375),
+                (self.x, self.y + h * 0.125),
+                (self.x + w * 0.25, self.y + h * 0.25),
+            ]
+            right_wing = [
+                (self.right - w * 0.17, self.y + h * 0.375),
+                (self.right, self.y + h * 0.125),
+                (self.right - w * 0.25, self.y + h * 0.25),
+            ]
+            Line(points=left_wing, width=screen.dp(2), close=True)
+            Line(points=right_wing, width=screen.dp(2), close=True)
+
+            # 驾驶舱
+            Color(1, 1, 1, 1)
+            cockpit_w = w * 0.27
+            cockpit_h = h * 0.31
+            Ellipse(pos=(self.center_x - cockpit_w/2, self.center_y - cockpit_h/2),
+                   size=(cockpit_w, cockpit_h))
+
+            # 无敌闪烁
+            if self.invincible and int(Clock.get_time() * 10) % 2:
+                Color(1, 1, 1, 0.5)
+                Rectangle(pos=self.pos, size=self.size)
 
 
-class Enemy(SpriteImage):
+class Enemy(SpriteWidget):
     """敌机"""
     enemy_type = StringProperty('normal')
 
     def __init__(self, enemy_type='normal', **kwargs):
-        self.enemy_type = enemy_type
         source_map = {
             'normal': 'enemy_normal.png',
             'fast': 'enemy_fast.png',
             'tank': 'enemy_tank.png'
         }
-        super().__init__(source=source_map.get(enemy_type, 'enemy_normal.png'), **kwargs)
+        super().__init__(image_source=source_map.get(enemy_type), **kwargs)
+        self.enemy_type = enemy_type
         self.setup_type()
 
     def setup_type(self):
@@ -109,22 +204,57 @@ class Enemy(SpriteImage):
             self.health = 1
             self.speed = screen.scale * 3
             self.score = 100
+            self.color = (1, 0.2, 0.2)
         elif self.enemy_type == 'fast':
             self.set_size_rel(0.06, 0.04)
             self.health = 1
             self.speed = screen.scale * 5
             self.score = 150
+            self.color = (0.8, 0.4, 1)
         elif self.enemy_type == 'tank':
             self.set_size_rel(0.11, 0.06)
             self.health = 3
             self.speed = screen.scale * 2
             self.score = 300
+            self.color = (0.4, 0.4, 0.4)
+
+    def draw_ship(self):
+        if self.use_image:
+            self.update_position()
+            return
+
+        self.canvas.clear()
+        w, h = self.size
+        with self.canvas:
+            Color(*self.color)
+            if self.enemy_type == 'normal':
+                points = [
+                    (self.center_x, self.y),
+                    (self.x, self.top - h * 0.25),
+                    (self.center_x, self.top - h * 0.5),
+                    (self.right, self.top - h * 0.25),
+                ]
+                Line(points=points, width=screen.dp(2), close=True)
+            elif self.enemy_type == 'fast':
+                points = [
+                    (self.center_x, self.y),
+                    (self.x, self.top),
+                    (self.center_x, self.top - h * 0.25),
+                    (self.right, self.top),
+                ]
+                Line(points=points, width=screen.dp(2), close=True)
+            elif self.enemy_type == 'tank':
+                Rectangle(pos=(self.x + w*0.1, self.y + h*0.1),
+                         size=(w * 0.8, h * 0.8))
+                Color(0.6, 0.2, 0.2)
+                Rectangle(pos=(self.x + w*0.2, self.y + h*0.2),
+                         size=(w * 0.6, h * 0.6))
 
 
-class Boss(SpriteImage):
+class Boss(SpriteWidget):
     """Boss"""
     def __init__(self, level=1, **kwargs):
-        super().__init__(source='boss.png', **kwargs)
+        super().__init__(image_source='boss.png', **kwargs)
         self.level = level
         base_w = 0.25 + level * 0.02
         base_h = 0.1 + level * 0.01
@@ -136,22 +266,52 @@ class Boss(SpriteImage):
         self.direction = 1
         self.shoot_timer = 0
 
+    def draw_ship(self):
+        if self.use_image:
+            self.update_position()
+            return
 
-class Bullet(SpriteImage):
+        self.canvas.clear()
+        w, h = self.size
+        with self.canvas:
+            Color(0.5, 0, 0)
+            Ellipse(pos=self.pos, size=self.size)
+            Color(0.8, 0.2, 0.2)
+            Ellipse(pos=(self.x + w*0.08, self.y + h*0.06),
+                   size=(w * 0.84, h * 0.88))
+            Color(1, 0.84, 0)
+            core_size = min(w, h) * 0.3
+            Ellipse(pos=(self.center_x - core_size/2, self.center_y - core_size/2),
+                   size=(core_size, core_size))
+
+
+class Bullet(SpriteWidget):
     """子弹"""
     def __init__(self, is_player=True, **kwargs):
         source = 'bullet_player.png' if is_player else 'bullet_enemy.png'
-        super().__init__(source=source, **kwargs)
+        super().__init__(image_source=source, **kwargs)
         self.is_player = is_player
         if is_player:
             self.set_size_rel(0.02, 0.03)
             self.speed = screen.scale * 12
+            self.color = (0.2, 1, 1)
         else:
             self.set_size_rel(0.025, 0.025)
             self.speed = screen.scale * 4
+            self.color = (1, 0.3, 0.3)
+
+    def draw_bullet(self):
+        if self.use_image:
+            self.update_position()
+            return
+
+        self.canvas.clear()
+        with self.canvas:
+            Color(*self.color)
+            Ellipse(pos=self.pos, size=self.size)
 
 
-class PowerUp(SpriteImage):
+class PowerUp(SpriteWidget):
     """道具"""
     def __init__(self, powerup_type='health', **kwargs):
         source_map = {
@@ -160,43 +320,64 @@ class PowerUp(SpriteImage):
             'shield': 'powerup_shield.png',
             'bomb': 'powerup_bomb.png'
         }
-        super().__init__(source=source_map.get(powerup_type, 'powerup_health.png'), **kwargs)
+        super().__init__(image_source=source_map.get(powerup_type), **kwargs)
         self.powerup_type = powerup_type
         self.set_size_rel(0.07, 0.04)
         self.speed = screen.scale * 2
+        self.colors = {
+            'health': (0.2, 1, 0.4),
+            'weapon': (1, 1, 0.2),
+            'shield': (0.2, 1, 1),
+            'bomb': (0.5, 0.5, 0.5),
+        }
+
+    def draw_item(self):
+        if self.use_image:
+            self.update_position()
+            return
+
+        self.canvas.clear()
+        w, h = self.size
+        with self.canvas:
+            Color(*self.colors.get(self.powerup_type, (1, 1, 1)))
+            Ellipse(pos=self.pos, size=self.size)
 
 
-class Explosion(Image):
-    """爆炸动画"""
+class Explosion(Widget):
+    """爆炸效果"""
     def __init__(self, pos, size_ratio=0.08, **kwargs):
         super().__init__(**kwargs)
         self.size_hint = (None, None)
         self.size = (screen.rel_w(size_ratio), screen.rel_h(size_ratio))
         self.pos = pos
-        self.allow_stretch = True
         self.frame = 0
         self.max_frames = 15
-        self.frames = []
-        # 加载爆炸动画帧
-        for i in range(15):
-            frame_path = f'explosion_{i:02d}.png'
-            if os.path.exists(frame_path):
-                self.frames.append(frame_path)
-        if self.frames:
-            self.source = self.frames[0]
+        self.image_widget = None
+
+        # 尝试加载爆炸动画帧
+        frame_path = get_asset_path('explosion_00.png')
+        if frame_path:
+            self.image_widget = Image(source=frame_path, size=self.size, pos=self.pos,
+                                       allow_stretch=True, keep_ratio=True)
 
     def update_frame(self):
         self.frame += 1
-        if self.frame < len(self.frames):
-            self.source = self.frames[self.frame]
-            return True
+        if self.frame < self.max_frames and self.image_widget:
+            frame_path = get_asset_path(f'explosion_{self.frame:02d}.png')
+            if frame_path:
+                self.image_widget.source = frame_path
+                return True
         return False
 
 
 class Background(Image):
     """滚动背景"""
     def __init__(self, **kwargs):
-        super().__init__(source='background.png', **kwargs)
+        bg_path = get_asset_path('background.png')
+        if bg_path:
+            super().__init__(source=bg_path, **kwargs)
+        else:
+            super().__init__(**kwargs)
         self.size_hint = (None, None)
         self.size = (screen.real_width, screen.real_height * 2)
         self.pos = (0, -screen.real_height)
@@ -331,7 +512,7 @@ class GameWidget(FloatLayout):
 
         self.player = Player()
         self.player.pos = (screen.real_width/2 - self.player.width/2, screen.rel_h(0.12))
-        self.add_widget(self.player)
+        self.player.add_to_parent(self)
 
         self.enemies = []
         self.bullets = []
@@ -342,9 +523,7 @@ class GameWidget(FloatLayout):
         if self.game_state != 'playing':
             return
 
-        # 更新背景
         self.bg1.update(dt)
-
         self.spawn_timer += dt
         self.shoot_timer += dt
 
@@ -369,6 +548,7 @@ class GameWidget(FloatLayout):
 
         self.check_level_progress(config)
         self.update_ui()
+        self.draw_all()
 
     def spawn_enemy(self, enemy_types):
         enemy_type = random.choice(enemy_types)
@@ -376,7 +556,7 @@ class GameWidget(FloatLayout):
         margin = screen.dp(20)
         enemy.pos = (random.randint(int(margin), int(screen.real_width - enemy.width - margin)), screen.real_height)
         self.enemies.append(enemy)
-        self.add_widget(enemy)
+        enemy.add_to_parent(self)
 
     def player_shoot(self):
         if not self.player:
@@ -386,7 +566,7 @@ class GameWidget(FloatLayout):
             bullet = Bullet(is_player=True)
             bullet.pos = (self.player.center_x - bullet.width/2 + screen.rel_w(offset), self.player.top)
             self.bullets.append(bullet)
-            self.add_widget(bullet)
+            bullet.add_to_parent(self)
 
     def update_player(self, dt):
         if not self.player:
@@ -414,8 +594,6 @@ class GameWidget(FloatLayout):
             if self.player.invincible_time <= 0:
                 self.player.invincible = False
 
-        self.player.update_visual()
-
     def update_enemies(self, dt):
         for enemy in self.enemies[:]:
             enemy.y -= enemy.speed
@@ -423,10 +601,10 @@ class GameWidget(FloatLayout):
                 bullet = Bullet(is_player=False)
                 bullet.pos = (enemy.center_x - bullet.width/2, enemy.y)
                 self.bullets.append(bullet)
-                self.add_widget(bullet)
+                bullet.add_to_parent(self)
             if enemy.y < -enemy.height:
                 self.enemies.remove(enemy)
-                self.remove_widget(enemy)
+                enemy.remove_from_parent(self)
 
     def update_bullets(self, dt):
         for bullet in self.bullets[:]:
@@ -437,7 +615,7 @@ class GameWidget(FloatLayout):
 
             if bullet.y > screen.real_height + bullet.height or bullet.y < -bullet.height:
                 self.bullets.remove(bullet)
-                self.remove_widget(bullet)
+                bullet.remove_from_parent(self)
                 continue
 
             if bullet.is_player:
@@ -446,13 +624,13 @@ class GameWidget(FloatLayout):
                         enemy.health -= 1
                         if bullet in self.bullets:
                             self.bullets.remove(bullet)
-                            self.remove_widget(bullet)
+                            bullet.remove_from_parent(self)
                         if enemy.health <= 0:
                             self.score += enemy.score
                             self.enemies_killed += 1
                             self.create_explosion(enemy.center, enemy.width)
                             self.enemies.remove(enemy)
-                            self.remove_widget(enemy)
+                            enemy.remove_from_parent(self)
                             if random.random() < 0.15:
                                 self.spawn_powerup(enemy.center)
                         break
@@ -461,11 +639,11 @@ class GameWidget(FloatLayout):
                     self.boss.health -= 1
                     if bullet in self.bullets:
                         self.bullets.remove(bullet)
-                        self.remove_widget(bullet)
+                        bullet.remove_from_parent(self)
                     if self.boss.health <= 0:
                         self.score += self.boss.score
                         self.create_explosion(self.boss.center, self.boss.width * 1.5)
-                        self.remove_widget(self.boss)
+                        self.boss.remove_from_parent(self)
                         self.boss = None
                         self.boss_spawned = False
                         self.level += 1
@@ -474,7 +652,7 @@ class GameWidget(FloatLayout):
                 if self.player and self.collide(bullet, self.player):
                     if bullet in self.bullets:
                         self.bullets.remove(bullet)
-                        self.remove_widget(bullet)
+                        bullet.remove_from_parent(self)
                     if not self.player.shield and not self.player.invincible:
                         self.player_hit()
 
@@ -483,12 +661,12 @@ class GameWidget(FloatLayout):
             powerup.y -= powerup.speed
             if powerup.y < -powerup.height:
                 self.powerups.remove(powerup)
-                self.remove_widget(powerup)
+                powerup.remove_from_parent(self)
                 continue
             if self.player and self.collide(powerup, self.player):
                 self.apply_powerup(powerup.powerup_type)
                 self.powerups.remove(powerup)
-                self.remove_widget(powerup)
+                powerup.remove_from_parent(self)
 
     def update_explosions(self, dt):
         for explosion in self.explosions[:]:
@@ -509,7 +687,7 @@ class GameWidget(FloatLayout):
                 bullet = Bullet(is_player=False)
                 bullet.pos = (self.boss.x + self.boss.width * (0.15 + i * 0.35), self.boss.y)
                 self.bullets.append(bullet)
-                self.add_widget(bullet)
+                bullet.add_to_parent(self)
 
     def check_level_progress(self, config):
         if self.enemies_killed >= config['enemies_to_kill'] and not self.boss_spawned:
@@ -519,9 +697,9 @@ class GameWidget(FloatLayout):
         self.boss_spawned = True
         self.boss = Boss(level=self.level)
         self.boss.pos = (screen.real_width/2 - self.boss.width/2, screen.real_height - self.boss.height - screen.dp(20))
-        self.add_widget(self.boss)
+        self.boss.add_to_parent(self)
         for enemy in self.enemies:
-            self.remove_widget(enemy)
+            enemy.remove_from_parent(self)
         self.enemies = []
 
     def spawn_powerup(self, pos):
@@ -529,7 +707,7 @@ class GameWidget(FloatLayout):
         powerup = PowerUp(powerup_type=powerup_type)
         powerup.pos = (pos[0] - powerup.width/2, pos[1] - powerup.height/2)
         self.powerups.append(powerup)
-        self.add_widget(powerup)
+        powerup.add_to_parent(self)
 
     def apply_powerup(self, powerup_type):
         if powerup_type == 'health':
@@ -557,18 +735,18 @@ class GameWidget(FloatLayout):
         for enemy in self.enemies:
             self.score += enemy.score
             self.create_explosion(enemy.center, enemy.width)
-            self.remove_widget(enemy)
+            enemy.remove_from_parent(self)
         self.enemies = []
         for bullet in self.bullets[:]:
             if not bullet.is_player:
                 self.bullets.remove(bullet)
-                self.remove_widget(bullet)
+                bullet.remove_from_parent(self)
         if self.boss:
             self.boss.health -= 10
             if self.boss.health <= 0:
                 self.score += self.boss.score
                 self.create_explosion(self.boss.center, self.boss.width * 1.5)
-                self.remove_widget(self.boss)
+                self.boss.remove_from_parent(self)
                 self.boss = None
                 self.boss_spawned = False
                 self.level += 1
@@ -604,17 +782,17 @@ class GameWidget(FloatLayout):
         if hasattr(self, 'gameover_widget'):
             self.remove_widget(self.gameover_widget)
         if self.player:
-            self.remove_widget(self.player)
+            self.player.remove_from_parent(self)
         for enemy in self.enemies:
-            self.remove_widget(enemy)
+            enemy.remove_from_parent(self)
         for bullet in self.bullets:
-            self.remove_widget(bullet)
+            bullet.remove_from_parent(self)
         for powerup in self.powerups:
-            self.remove_widget(powerup)
+            powerup.remove_from_parent(self)
         for explosion in self.explosions:
             self.remove_widget(explosion)
         if self.boss:
-            self.remove_widget(self.boss)
+            self.boss.remove_from_parent(self)
         self.start_game()
 
     def collide(self, w1, w2):
@@ -625,6 +803,16 @@ class GameWidget(FloatLayout):
         self.level_label.text = f'关卡: {self.level}'
         self.lives_label.text = f'❤ x {self.lives}'
         self.bombs_label.text = f'💣 x {self.bombs}'
+
+    def draw_all(self):
+        if self.player:
+            self.player.draw_ship()
+        for enemy in self.enemies:
+            enemy.draw_ship()
+        for bullet in self.bullets:
+            bullet.draw_bullet()
+        for powerup in self.powerups:
+            powerup.draw_item()
 
     def on_touch_down(self, touch):
         if self.game_state != 'playing' or not self.player:
