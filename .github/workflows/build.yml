@@ -5,6 +5,9 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -17,13 +20,6 @@ jobs:
       run: |
         buildozer android debug
 
-    - name: Get APK filename
-      id: apk
-      run: |
-        APK_FILE=$(ls bin/*.apk | head -n1)
-        echo "apk_file=$APK_FILE" >> $GITHUB_OUTPUT
-        echo "apk_name=$(basename $APK_FILE)" >> $GITHUB_OUTPUT
-
     - name: Upload APK artifact
       uses: actions/upload-artifact@v4
       with:
@@ -31,7 +27,7 @@ jobs:
         path: bin/*.apk
 
     - name: Create Release
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       if: github.event_name == 'push'
       with:
         tag_name: v1.0.${{ github.run_number }}
@@ -45,8 +41,7 @@ jobs:
           - 触摸控制优化
 
           下载 APK 文件安装即可游玩。
-        files: |
-          ${{ steps.apk.outputs.apk_file }}
+        files: bin/*.apk
         draft: false
         prerelease: false
       env:
