@@ -16,8 +16,7 @@ source.dir = .
 source.include_exts = py,png,jpg,kv,atlas,json
 
 # (str) Application versioning
-# 使用 git tag 或环境变量 VERSION 来设置版本号
-version = %(env.VERSION:1.0.0)s
+version = 1.0.0
 
 # (list) Application requirements
 requirements = python3,kivy
