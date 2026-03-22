@@ -18,10 +18,18 @@ from kivy.utils import platform
 from kivy.resources import resource_add_path, resource_find
 import random
 import os
+import sys
 
 # 确保 Kivy 能找到资源（Android 兼容）
-_dir = os.path.dirname(os.path.abspath(__file__))
-resource_add_path(_dir)
+# 尝试多种路径
+for path in [
+    os.path.dirname(os.path.abspath(__file__)),
+    os.path.dirname(os.path.abspath(sys.argv[0])) if sys.argv else '',
+    os.getcwd(),
+    '.',
+]:
+    if path and os.path.exists(path):
+        resource_add_path(path)
 
 
 def get_asset_path(filename):
@@ -30,10 +38,17 @@ def get_asset_path(filename):
     result = resource_find(filename)
     if result:
         return result
-    # 再用绝对路径
-    abs_path = os.path.join(_dir, filename)
-    if os.path.exists(abs_path):
-        return abs_path
+    # 尝试多种路径
+    for base_path in [
+        os.path.dirname(os.path.abspath(__file__)),
+        os.path.dirname(os.path.abspath(sys.argv[0])) if sys.argv else '',
+        os.getcwd(),
+        '.',
+    ]:
+        if base_path:
+            abs_path = os.path.join(base_path, filename)
+            if os.path.exists(abs_path):
+                return abs_path
     return None
 
 
@@ -81,18 +96,21 @@ class SpriteWidget(Widget):
         self.image_source = image_source
         self.image_widget = None
         self.use_image = False
+        self._asset_path = None
 
         # 尝试加载图片
         if image_source:
-            asset_path = get_asset_path(image_source)
-            if asset_path:
-                self.image_widget = Image(source=asset_path, size=self.size, pos=self.pos,
-                                         allow_stretch=True, keep_ratio=True)
+            self._asset_path = get_asset_path(image_source)
+            if self._asset_path:
                 self.use_image = True
 
     def set_size_rel(self, w_ratio, h_ratio):
         self.size = (screen.rel_w(w_ratio), screen.rel_h(h_ratio))
-        if self.image_widget:
+        if self.use_image and self._asset_path and not self.image_widget:
+            # 延迟创建图片 widget，确保 size 已设置
+            self.image_widget = Image(source=self._asset_path, size=self.size, pos=self.pos,
+                                     allow_stretch=True, keep_ratio=True, size_hint=(None, None))
+        elif self.image_widget:
             self.image_widget.size = self.size
 
     def update_position(self):
