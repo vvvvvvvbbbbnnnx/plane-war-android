@@ -21,6 +21,34 @@ import random
 import math
 import os
 
+# 中文字体支持
+def get_chinese_font():
+    """获取支持中文的字体"""
+    # Android 系统字体路径
+    android_fonts = [
+        '/system/fonts/NotoSansCJK-Regular.ttc',
+        '/system/fonts/DroidSansFallback.ttf',
+        '/system/fonts/NotoSansSC-Regular.otf',
+    ]
+    # Windows 字体路径
+    windows_fonts = [
+        'C:/Windows/Fonts/msyh.ttc',  # 微软雅黑
+        'C:/Windows/Fonts/simhei.ttf',  # 黑体
+        'C:/Windows/Fonts/simsun.ttc',  # 宋体
+    ]
+
+    fonts = android_fonts if platform == 'android' else windows_fonts
+
+    for font_path in fonts:
+        if os.path.exists(font_path):
+            return font_path
+
+    # 如果找不到中文字体，返回 None（使用默认字体）
+    return None
+
+# 全局中文字体
+CHINESE_FONT = get_chinese_font()
+
 # 获取资源路径
 def get_resource_path(filename):
     """获取资源文件的绝对路径"""
@@ -629,6 +657,7 @@ class GameWidget(FloatLayout):
         self.score_label = Label(
             text='分数: 0',
             font_size=screen.sp(18),
+            font_name=CHINESE_FONT,
             size_hint=(None, None),
             size=(screen.rel_x(0.35), screen.rel_y(0.04)),
             pos=(screen.dp(10), screen.real_height - screen.rel_y(0.06)),
@@ -642,6 +671,7 @@ class GameWidget(FloatLayout):
         self.level_label = Label(
             text='关卡: 1',
             font_size=screen.sp(18),
+            font_name=CHINESE_FONT,
             size_hint=(None, None),
             size=(screen.rel_x(0.35), screen.rel_y(0.04)),
             pos=(screen.real_width - screen.rel_x(0.35) - screen.dp(10),
@@ -656,6 +686,7 @@ class GameWidget(FloatLayout):
         self.lives_label = Label(
             text='❤ x 3',
             font_size=screen.sp(16),
+            font_name=CHINESE_FONT,
             size_hint=(None, None),
             size=(screen.rel_x(0.25), screen.rel_y(0.03)),
             pos=(screen.dp(10), screen.real_height - screen.rel_y(0.1)),
@@ -668,6 +699,7 @@ class GameWidget(FloatLayout):
         self.bombs_label = Label(
             text='💣 x 3',
             font_size=screen.sp(16),
+            font_name=CHINESE_FONT,
             size_hint=(None, None),
             size=(screen.rel_x(0.25), screen.rel_y(0.03)),
             pos=(screen.real_width - screen.rel_x(0.25) - screen.dp(10),
@@ -713,6 +745,7 @@ class GameWidget(FloatLayout):
             text='[size=48]飞机大战[/size]\n[size=24]Android版[/size]',
             markup=True,
             font_size=screen.sp(36),
+            font_name=CHINESE_FONT,
             pos_hint={'center_x': 0.5, 'center_y': 0.65},
             color=(0.2, 1, 1, 1),
         )
@@ -722,6 +755,7 @@ class GameWidget(FloatLayout):
         start_btn = Button(
             text='开始游戏',
             font_size=screen.sp(22),
+            font_name=CHINESE_FONT,
             size_hint=(0.5, 0.08),
             pos_hint={'center_x': 0.5, 'center_y': 0.4},
             background_color=(0.2, 0.6, 1, 1),
@@ -734,6 +768,7 @@ class GameWidget(FloatLayout):
             text='[size=16]触摸屏幕移动飞机\n自动射击\n双击使用炸弹[/size]',
             markup=True,
             font_size=screen.sp(14),
+            font_name=CHINESE_FONT,
             pos_hint={'center_x': 0.5, 'center_y': 0.2},
             color=(0.8, 0.8, 0.8, 1),
         )
@@ -1111,6 +1146,7 @@ class GameWidget(FloatLayout):
             text='[size=48]游戏结束[/size]',
             markup=True,
             font_size=screen.sp(36),
+            font_name=CHINESE_FONT,
             pos_hint={'center_x': 0.5, 'center_y': 0.65},
             color=(1, 0.3, 0.3, 1),
         )
@@ -1121,6 +1157,7 @@ class GameWidget(FloatLayout):
             text=f'[size=24]最终分数: {self.score}[/size]\n[size=20]到达关卡: {self.level}[/size]',
             markup=True,
             font_size=screen.sp(18),
+            font_name=CHINESE_FONT,
             pos_hint={'center_x': 0.5, 'center_y': 0.5},
             color=(1, 1, 1, 1),
         )
@@ -1130,6 +1167,7 @@ class GameWidget(FloatLayout):
         restart_btn = Button(
             text='重新开始',
             font_size=screen.sp(22),
+            font_name=CHINESE_FONT,
             size_hint=(0.5, 0.08),
             pos_hint={'center_x': 0.5, 'center_y': 0.35},
             background_color=(0.2, 0.6, 1, 1),
