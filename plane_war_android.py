@@ -15,29 +15,25 @@ from kivy.properties import NumericProperty, StringProperty
 from kivy.core.window import Window
 from kivy.metrics import dp, sp
 from kivy.utils import platform
-from kivy.resources import resource_find
+from kivy.resources import resource_add_path, resource_find
 import random
 import os
 
+# 确保 Kivy 能找到资源（Android 兼容）
+_dir = os.path.dirname(os.path.abspath(__file__))
+resource_add_path(_dir)
+
 
 def get_asset_path(filename):
-    """获取资源文件的正确路径"""
-    # 尝试多种路径
-    paths_to_try = [
-        filename,  # 当前目录
-        os.path.join(os.path.dirname(__file__), filename),  # 脚本目录
-        os.path.join('assets', filename),  # assets 目录
-    ]
-
-    for path in paths_to_try:
-        if os.path.exists(path):
-            return path
-
-    # 使用 Kivy 资源查找
-    resource = resource_find(filename)
-    if resource:
-        return resource
-
+    """获取资源文件的正确路径（Android 兼容）"""
+    # 先用 Kivy 资源查找
+    result = resource_find(filename)
+    if result:
+        return result
+    # 再用绝对路径
+    abs_path = os.path.join(_dir, filename)
+    if os.path.exists(abs_path):
+        return abs_path
     return None
 
 
