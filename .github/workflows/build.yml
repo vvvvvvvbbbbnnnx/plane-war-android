@@ -1,4 +1,4 @@
-name: Build APK
+name: Build and Release APK
 
 on:
   push:
@@ -17,8 +17,35 @@ jobs:
       run: |
         buildozer android debug
 
-    - name: Upload APK
+    - name: Upload APK artifact
       uses: actions/upload-artifact@v4
       with:
         name: plane_war_apk
         path: bin/*.apk
+
+    - name: Get APK filename
+      id: apk
+      run: |
+        APK_FILE=$(ls bin/*.apk | head -n 1)
+        APK_NAME=$(basename "$APK_FILE")
+        echo "apk_file=$APK_FILE" >> $GITHUB_OUTPUT
+        echo "apk_name=$APK_NAME" >> $GITHUB_OUTPUT
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: v1.0.${{ github.run_number }}
+        name: Release v1.0.${{ github.run_number }}
+        body: |
+          ## 飞机大战 Android 版
+
+          ### 更新内容
+          - 自动构建版本
+
+          ### 下载
+          下载下方的 APK 文件安装即可
+
+        files: |
+          ${{ steps.apk.outputs.apk_file }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
