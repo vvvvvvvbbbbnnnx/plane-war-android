@@ -1,41 +1,18 @@
-# 新建文件夹
+# plane-war-android
 
 ## 项目概述
 
-请添加项目描述。
-
-## 目录结构
-
-```
-新建文件夹/
-├── explosion/
-│   ├── Explosion1.png
-│   ├── Explosion2.png
-│   ├── Explosion3.png
-│   ├── Explosion4.png
-│   ├── Explosion5.png
-│   └── ... (2 more files)
-├── plane_sprite/
-│   ├── png/
-│   │   ├── BG.png
-│   └── vector/
-│       ├── BG.ai
-│       ├── BG.svg
-│       ├── Char.ai
-│       ├── Char.svg
-├── README_ANDROID.md
-├── background.png
-├── boss.png
-├── buildozer.spec
-├── bullet_enemy.png
-└── ... (32 more files)
-```
+Kivy 框架开发的 2D 竖版弹幕射击游戏（飞机大战），支持 Android 打包。模块化架构，配置/核心/实体/系统/UI 六层分离。
 
 ## 技术栈
 
-- **工具**: GitHub Actions
+- Python 3 + Kivy
+- Buildozer 打包 Android APK
+- GitHub Actions 自动构建发布
 
-## 备注
+## 注意事项
 
-- 此文件由 Claude Code 自动生成
-- 最后更新: 2026-03-22 02:54:55
+- 所有资源通过 `utils/resources.py` 的 `ResourceManager` 统一管理
+- 屏幕适配通过 `utils/screen.py` 处理
+- 游戏核心循环在 `core/game.py` 的 `Game` 类中
+- 配置项集中在 `config/settings.py` 的 `GameConfig` dataclass
