@@ -38,6 +38,7 @@ class Boss(Entity):
         self._level = level
         super().__init__(**kwargs)
 
+        self.entity_type = 'boss'
         config = get_config()
 
         # Boss尺寸随等级增加
@@ -66,21 +67,14 @@ class Boss(Entity):
         self._hitbox_scale = 0.9
 
     def update(self, dt: float) -> None:
-        """更新Boss"""
         super().update(dt)
-
-        # 水平移动
-        self.x += self.speed * self.direction
-
-        # 边界反弹
+        self.x += self.speed * self.direction * dt * 60
         if self.x <= 0:
             self.x = 0
             self.direction = 1
         elif self.x >= screen.real_width - self.width:
             self.x = screen.real_width - self.width
             self.direction = -1
-
-        # 更新射击计时器
         self._shoot_timer += dt
 
     def should_shoot(self) -> bool:
@@ -110,17 +104,11 @@ class Boss(Entity):
         return positions
 
     def take_damage(self, amount: int = 1) -> bool:
-        """
-        受到伤害
-
-        Args:
-            amount: 伤害量
-
-        Returns:
-            是否死亡
-        """
         self.health -= amount
-        return self.health <= 0
+        if self.health <= 0:
+            self.active = False
+            return True
+        return False
 
     def get_health_ratio(self) -> float:
         """

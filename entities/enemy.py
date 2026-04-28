@@ -126,17 +126,13 @@ class Enemy(Entity):
         return chance(self._shoot_prob)
 
     def take_damage(self, amount: int = 1) -> bool:
-        """
-        受到伤害
-
-        Args:
-            amount: 伤害量
-
-        Returns:
-            是否死亡
-        """
+        """受到伤害，生命归零时自动标记 inactive"""
         self.health -= amount
-        return self.health <= 0
+        if self.health <= 0:
+            self.health = 0
+            self.active = False
+            return True
+        return False
 
     def draw(self) -> None:
         """绘制敌机"""
