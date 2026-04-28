@@ -376,7 +376,6 @@ class Game:
 
     def _check_collisions(self) -> None:
         """检测碰撞"""
-        # 收集所有活动实体
         entities = []
         if self.player:
             entities.append(self.player)
@@ -386,9 +385,13 @@ class Game:
         if self.boss:
             entities.append(self.boss)
 
-        # 更新碰撞系统
         self.collision.update(entities)
-        self.collision.check_collisions()
+        try:
+            self.collision.check_collisions()
+        except Exception as e:
+            import traceback
+            print(f'[Game] 碰撞检测异常: {e}')
+            traceback.print_exc()
 
     def _on_bullet_hit_enemy(self, bullet: Bullet, enemy: Enemy) -> None:
         """子弹击中敌机"""

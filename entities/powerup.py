@@ -171,8 +171,18 @@ class PowerUp(Entity):
                     width=screen.dp(2)
                 )
 
+    def apply(self, player) -> None:
+        """应用道具效果到玩家"""
+        if self.powerup_type == 'health':
+            player.heal(1)
+        elif self.powerup_type == 'weapon':
+            player.upgrade_weapon()
+        elif self.powerup_type == 'shield':
+            player.activate_shield()
+        elif self.powerup_type == 'bomb':
+            player.add_bomb(1)
+
     def reset(self) -> None:
-        """重置道具状态"""
         super().reset()
         self.velocity_y = -self.speed
 
