@@ -42,6 +42,7 @@ class GameWidget(FloatLayout):
 
         # 游戏实例
         self.game = game
+        game.root_widget = self
 
         # 背景
         self._setup_background()
@@ -176,48 +177,56 @@ class GameWidget(FloatLayout):
                 self.bg2.y = Window.height
 
     def _update_entities(self) -> None:
-        """更新实体显示，确保正确的 z-order 图层"""
-        new_widgets = []
+        """更新实体显示，仅在有变化时修正 z-order"""
+        changed = False
 
         for enemy in self.game.enemies:
             if enemy.parent is None:
-                new_widgets.append(enemy)
+                self.add_widget(enemy)
+                changed = True
 
         for bullet in self.game.bullets:
             if bullet.parent is None:
-                new_widgets.append(bullet)
+                self.add_widget(bullet)
+                changed = True
 
         for powerup in self.game.powerups:
             if powerup.parent is None:
-                new_widgets.append(powerup)
+                self.add_widget(powerup)
+                changed = True
 
         for explosion in self.game.explosions:
             if explosion.parent is None:
-                new_widgets.append(explosion)
+                self.add_widget(explosion)
+                changed = True
 
         if self.game.boss and self.game.boss.parent is None:
-            new_widgets.append(self.game.boss)
-
-        for widget in new_widgets:
-            self.add_widget(widget)
+            self.add_widget(self.game.boss)
+            changed = True
 
         for enemy in self.game.enemies:
             if not enemy.active and enemy.parent:
                 self.remove_widget(enemy)
+                changed = True
 
         for bullet in self.game.bullets:
             if not bullet.active and bullet.parent:
                 self.remove_widget(bullet)
+                changed = True
 
         for powerup in self.game.powerups:
             if not powerup.active and powerup.parent:
                 self.remove_widget(powerup)
+                changed = True
 
         for explosion in self.game.explosions:
             if not explosion.active and explosion.parent:
                 self.remove_widget(explosion)
+                changed = True
 
-        self._fix_z_order()
+        if changed:
+            self._fix_z_order()
+            self._cleanup_zombies()
 
     def _fix_z_order(self) -> None:
         """确保图层顺序: 背景 → 道具 → 敌机 → Boss → 子弹 → 玩家 → 爆炸 → HUD"""
@@ -236,6 +245,31 @@ class GameWidget(FloatLayout):
         if self.hud and self.hud.parent:
             self.remove_widget(self.hud)
             self.add_widget(self.hud)
+
+    def _cleanup_zombies(self) -> None:
+        """移除僵尸 widget（实体已从游戏列表移除但 widget 还在树上）"""
+        active_ids = set()
+        if self.game.player:
+            active_ids.add(id(self.game.player))
+        for e in self.game.enemies:
+            active_ids.add(id(e))
+        for b in self.game.bullets:
+            active_ids.add(id(b))
+        for p in self.game.powerups:
+            active_ids.add(id(p))
+        for e in self.game.explosions:
+            active_ids.add(id(e))
+        if self.game.boss:
+            active_ids.add(id(self.game.boss))
+
+        to_remove = []
+        for child in self.children:
+            if hasattr(child, 'entity_type') and id(child) not in active_ids:
+                if child != self.hud:
+                    to_remove.append(child)
+
+        for zombie in to_remove:
+            self.remove_widget(zombie)
 
     def _show_game_over(self) -> None:
         """显示游戏结束界面"""

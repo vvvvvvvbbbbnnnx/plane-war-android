@@ -91,8 +91,8 @@ class Game:
         self.touch_offset = (0, 0)
         self.last_tap_time = 0.0
 
-        # UI组件（由外部设置）
-        self.ui_container: Optional[FloatLayout] = None
+        # 根 widget 引用，用于清理僵尸 widget
+        self.root_widget: Optional[FloatLayout] = None
 
         # 绑定窗口大小变化
         Window.bind(on_resize=self._on_window_resize)
@@ -410,6 +410,8 @@ class Game:
             # 移除敌机
             if enemy in self.enemies:
                 self.enemies.remove(enemy)
+                if self.root_widget and enemy.parent:
+                    self.root_widget.remove_widget(enemy)
                 self.pools.release(f'enemy_{enemy.enemy_type}', enemy)
 
             # 掉落道具
