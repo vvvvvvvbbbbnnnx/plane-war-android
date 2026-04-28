@@ -24,12 +24,13 @@ def get_chinese_font() -> Optional[str]:
         '/system/fonts/Roboto-Regular.ttf',
     ]
 
-    # Windows 字体路径
+    # Windows 字体路径（.ttf 优先，Kivy 对 .ttc 支持不稳定）
     windows_fonts = [
-        'C:/Windows/Fonts/msyh.ttc',  # 微软雅黑
-        'C:/Windows/Fonts/simhei.ttf',  # 黑体
-        'C:/Windows/Fonts/simsun.ttc',  # 宋体
+        'C:/Windows/Fonts/simhei.ttf',   # 黑体（TrueType，最可靠）
+        'C:/Windows/Fonts/msyh.ttc',      # 微软雅黑（TrueType Collection）
+        'C:/Windows/Fonts/simsun.ttc',    # 宋体
         'C:/Windows/Fonts/STZHONGS.TTF',  # 华文中宋
+        'C:/Windows/Fonts/msyh.ttf',      # 微软雅黑（非 Collection 版本）
     ]
 
     # macOS 字体路径
@@ -61,7 +62,7 @@ def get_chinese_font() -> Optional[str]:
     # 查找存在的字体
     for font_path in fonts:
         if os.path.exists(font_path):
-            return font_path
+            return os.path.normpath(font_path)
 
     return None
 

@@ -176,8 +176,7 @@ class GameWidget(FloatLayout):
                 self.bg2.y = Window.height
 
     def _update_entities(self) -> None:
-        """更新实体显示 - 优化版本"""
-        # 批量添加新实体（减少重复操作）
+        """更新实体显示，确保正确的 z-order 图层"""
         new_widgets = []
 
         for enemy in self.game.enemies:
@@ -199,11 +198,9 @@ class GameWidget(FloatLayout):
         if self.game.boss and self.game.boss.parent is None:
             new_widgets.append(self.game.boss)
 
-        # 一次性添加所有新widget
         for widget in new_widgets:
             self.add_widget(widget)
 
-        # 只检查已知实体列表中的不活动实体（避免遍历所有children）
         for enemy in self.game.enemies:
             if not enemy.active and enemy.parent:
                 self.remove_widget(enemy)
@@ -219,6 +216,26 @@ class GameWidget(FloatLayout):
         for explosion in self.game.explosions:
             if not explosion.active and explosion.parent:
                 self.remove_widget(explosion)
+
+        self._fix_z_order()
+
+    def _fix_z_order(self) -> None:
+        """确保图层顺序: 背景 → 道具 → 敌机 → Boss → 子弹 → 玩家 → 爆炸 → HUD"""
+        # 将玩家移到 HUD 之下、其他实体之上
+        if self.game.player and self.game.player.parent:
+            self.remove_widget(self.game.player)
+            self.add_widget(self.game.player)
+
+        # 爆炸移到玩家之上
+        for exp in self.game.explosions:
+            if exp.active and exp.parent:
+                self.remove_widget(exp)
+                self.add_widget(exp)
+
+        # HUD 始终在最上层
+        if self.hud and self.hud.parent:
+            self.remove_widget(self.hud)
+            self.add_widget(self.hud)
 
     def _show_game_over(self) -> None:
         """显示游戏结束界面"""
