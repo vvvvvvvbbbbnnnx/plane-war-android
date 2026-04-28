@@ -1,18 +1,85 @@
-# plane-war-android
+# plane-war-refactor
 
 ## 项目概述
 
-Kivy 框架开发的 2D 竖版弹幕射击游戏（飞机大战），支持 Android 打包。模块化架构，配置/核心/实体/系统/UI 六层分离。
+请添加项目描述。
+
+## 目录结构
+
+```
+plane-war-refactor/
+├── assets/
+│   ├── explosion/
+│   │   ├── Explosion1.png
+│   │   ├── Explosion2.png
+│   │   ├── Explosion3.png
+│   │   ├── Explosion4.png
+│   │   ├── Explosion5.png
+│   │   └── ... (2 more files)
+│   ├── fonts/
+│   ├── images/
+│   │   ├── background.png
+│   │   ├── boss.png
+│   │   ├── bullet_enemy.png
+│   │   ├── bullet_player.png
+│   │   ├── enemy_fast.png
+│   │   └── ... (22 more files)
+│   ├── plane_sprite/
+│   └── sounds/
+│       ├── bgm.wav
+│       ├── bomb.wav
+│       ├── boss.wav
+│       ├── boss_death.wav
+│       ├── button.wav
+│       └── ... (4 more files)
+├── config/
+│   ├── __init__.py
+│   ├── settings.py
+├── core/
+│   ├── __init__.py
+│   ├── entity.py
+│   ├── game.py
+│   ├── pool.py
+│   └── scene.py
+├── entities/
+│   ├── __init__.py
+│   ├── boss.py
+│   ├── bullet.py
+│   ├── enemy.py
+│   ├── explosion.py
+│   └── ... (2 more files)
+├── systems/
+│   ├── __init__.py
+│   ├── achievement.py
+│   ├── audio.py
+│   ├── collision.py
+│   ├── particle.py
+│   └── ... (1 more files)
+├── ui/
+│   ├── __init__.py
+│   ├── game_over.py
+│   ├── hud.py
+│   ├── menu.py
+│   ├── pause.py
+│   └── ... (1 more files)
+├── utils/
+│   ├── __init__.py
+│   ├── helpers.py
+│   ├── resources.py
+│   ├── screen.py
+├── README_ANDROID.md
+├── buildozer.spec
+├── main.py
+├── pixel_shmup.zip
+├── shmup.zip
+└── ... (2 more files)
+```
 
 ## 技术栈
 
-- Python 3 + Kivy
-- Buildozer 打包 Android APK
-- GitHub Actions 自动构建发布
+- **工具**: GitHub Actions
 
-## 注意事项
+## 备注
 
-- 所有资源通过 `utils/resources.py` 的 `ResourceManager` 统一管理
-- 屏幕适配通过 `utils/screen.py` 处理
-- 游戏核心循环在 `core/game.py` 的 `Game` 类中
-- 配置项集中在 `config/settings.py` 的 `GameConfig` dataclass
+- 此文件由 Claude Code 自动生成
+- 最后更新: 2026-04-28 20:34:13

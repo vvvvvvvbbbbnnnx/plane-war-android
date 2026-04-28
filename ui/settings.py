@@ -26,6 +26,8 @@ class SettingsScreen(Scene):
         super().__init__(**kwargs)
         self.on_back = on_back or on_close
         self._font = get_chinese_font()
+        self._difficulty = 'normal'
+        self._difficulty_btns = {}
         self._create_ui()
         self._load_settings()
 
@@ -127,6 +129,8 @@ class SettingsScreen(Scene):
             pos_hint={'center_x': 0.5, 'center_y': 0.4},
             background_color=(0.3, 0.3, 0.3, 1),
         )
+        self.easy_btn.bind(on_press=self._on_difficulty_pressed)
+        self._difficulty_btns['简单'] = self.easy_btn
         self.add_widget(self.easy_btn)
 
         self.normal_btn = Button(
@@ -137,6 +141,8 @@ class SettingsScreen(Scene):
             pos_hint={'center_x': 0.67, 'center_y': 0.4},
             background_color=(0.2, 0.6, 1, 1),
         )
+        self.normal_btn.bind(on_press=self._on_difficulty_pressed)
+        self._difficulty_btns['普通'] = self.normal_btn
         self.add_widget(self.normal_btn)
 
         self.hard_btn = Button(
@@ -147,6 +153,8 @@ class SettingsScreen(Scene):
             pos_hint={'center_x': 0.84, 'center_y': 0.4},
             background_color=(0.3, 0.3, 0.3, 1),
         )
+        self.hard_btn.bind(on_press=self._on_difficulty_pressed)
+        self._difficulty_btns['困难'] = self.hard_btn
         self.add_widget(self.hard_btn)
 
         # 返回按钮
@@ -165,7 +173,10 @@ class SettingsScreen(Scene):
     def _load_settings(self) -> None:
         """加载设置"""
         settings = save_manager.load_settings()
-        # TODO: 应用设置到UI
+        if 'difficulty' in settings:
+            self._difficulty = settings['difficulty']
+            if self._difficulty in self._difficulty_btns:
+                self._on_difficulty_pressed(self._difficulty_btns[self._difficulty])
 
     def _save_settings(self) -> None:
         """保存设置"""
@@ -173,8 +184,18 @@ class SettingsScreen(Scene):
             'music_volume': self.music_slider.value,
             'sfx_volume': self.sfx_slider.value,
             'sound_enabled': self.sound_toggle.state == 'down',
+            'difficulty': self._difficulty,
         }
         save_manager.save_settings(settings)
+
+    def _on_difficulty_pressed(self, instance) -> None:
+        """难度按钮点击"""
+        audio_manager.play_sfx('button')
+        self._difficulty = instance.text
+        for btn in self._difficulty_btns.values():
+            btn.background_color = (0.3, 0.3, 0.3, 1)
+        instance.background_color = (0.2, 0.6, 1, 1)
+        self._save_settings()
 
     def _on_sound_toggle(self, instance) -> None:
         """音效开关切换"""

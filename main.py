@@ -397,7 +397,7 @@ class PlaneWarApp(App):
             'boss_appear': 'boss.wav',
             'boss_death': 'boss_death.wav',
             'button': 'button.wav',
-            'bgm': 'bgm.mp3',
+            'bgm': 'bgm.wav',
         }
 
         for name, filename in sound_files.items():

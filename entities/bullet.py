@@ -30,7 +30,7 @@ class Bullet(Entity):
         Args:
             is_player: 是否为玩家子弹
         """
-        self._is_player = is_player
+        self.is_player = is_player
         super().__init__(**kwargs)
 
         # 设置实体类型（用于碰撞检测）
