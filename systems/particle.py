@@ -1,16 +1,10 @@
-# -*- coding: utf-8 -*-
 """
 飞机大战 - 粒子系统
 
 用于创建爆炸、尾迹等视觉效果
 """
-from typing import List, Tuple, Optional
-import random
 import math
-from kivy.graphics import Color, Point, PushMatrix, PopMatrix, Translate
-from kivy.clock import Clock
-
-from utils.screen import screen
+import random
 
 
 class Particle:
@@ -31,7 +25,7 @@ class Particle:
         x: float, y: float,
         vx: float, vy: float,
         lifetime: float,
-        color: Tuple[float, float, float, float],
+        color: tuple[float, float, float, float],
         size: float
     ):
         self.x = x
@@ -83,7 +77,7 @@ class ParticleSystem:
             max_particles: 最大粒子数量
         """
         self.max_particles = max_particles
-        self.particles: List[Particle] = []
+        self.particles: list[Particle] = []
 
         # 预定义效果
         self._effects = {
@@ -118,7 +112,7 @@ class ParticleSystem:
         spread: float = 50,
         speed: float = 100,
         lifetime: float = 0.5,
-        color: Tuple[float, float, float, float] = (1, 0.8, 0.2, 1)
+        color: tuple[float, float, float, float] = (1, 0.8, 0.2, 1)
     ) -> None:
         """创建爆炸效果"""
         for _ in range(count):
@@ -145,7 +139,7 @@ class ParticleSystem:
         count: int = 5,
         speed: float = 50,
         lifetime: float = 0.3,
-        color: Tuple[float, float, float, float] = (0.2, 1, 1, 0.8)
+        color: tuple[float, float, float, float] = (0.2, 1, 1, 0.8)
     ) -> None:
         """创建尾迹效果"""
         for _ in range(count):
@@ -170,7 +164,7 @@ class ParticleSystem:
         spread: float = 20,
         speed: float = 80,
         lifetime: float = 0.2,
-        color: Tuple[float, float, float, float] = (1, 1, 0.8, 1)
+        color: tuple[float, float, float, float] = (1, 1, 0.8, 1)
     ) -> None:
         """创建火花效果"""
         for _ in range(count):
@@ -210,7 +204,7 @@ class ParticleSystem:
         """获取粒子数量"""
         return len(self.particles)
 
-    def get_particles(self) -> List[Particle]:
+    def get_particles(self) -> list[Particle]:
         """获取所有粒子"""
         return self.particles
 

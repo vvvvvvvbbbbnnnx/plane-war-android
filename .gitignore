@@ -14,6 +14,23 @@ __pycache__/
 .DS_Store
 Thumbs.db
 
+# Python packaging
+*.egg-info/
+dist/
+build/
+
+# Test artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Type checking
+.mypy_cache/
+
+# Virtual environments
+venv/
+.venv/
+
 # Temp
 *.tmp
 *.log

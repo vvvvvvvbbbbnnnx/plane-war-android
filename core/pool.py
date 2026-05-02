@@ -1,11 +1,10 @@
-# -*- coding: utf-8 -*-
 """
 飞机大战 - 对象池
 
 提供通用的对象池实现，用于减少对象创建/销毁的开销。
 """
-from typing import TypeVar, Generic, Type, List, Callable, Optional
 from dataclasses import dataclass
+from typing import Callable, Generic, Optional, TypeVar
 
 T = TypeVar('T')
 
@@ -58,8 +57,8 @@ class ObjectPool(Generic[T]):
         self.on_release = on_release
 
         # 对象存储
-        self._pool: List[T] = []
-        self._active: List[T] = []
+        self._pool: list[T] = []
+        self._active: list[T] = []
 
         # 统计信息
         self._stats = PoolStats()
@@ -149,7 +148,7 @@ class ObjectPool(Generic[T]):
         for obj in self._active[:]:
             self.release(obj)
 
-    def get_active(self) -> List[T]:
+    def get_active(self) -> list[T]:
         """获取所有活动对象"""
         return self._active.copy()
 

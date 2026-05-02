@@ -1,13 +1,11 @@
-# -*- coding: utf-8 -*-
 """
 飞机大战 - Boss
 """
-from typing import Optional
+from kivy.graphics import Color, Ellipse, Rectangle
 from kivy.properties import NumericProperty
-from kivy.graphics import Color, Rectangle, Ellipse, Line
 
-from core.entity import Entity
 from config.settings import get_config
+from core.entity import Entity
 from utils.screen import screen
 
 

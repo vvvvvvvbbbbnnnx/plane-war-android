@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """飞机大战 - 实体模块"""
 # 避免循环导入，使用延迟导入
 # from .player import Player

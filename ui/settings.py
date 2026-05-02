@@ -1,20 +1,19 @@
-# -*- coding: utf-8 -*-
 """
 飞机大战 - 设置界面
 """
-from typing import Optional, Callable
-from kivy.uix.floatlayout import FloatLayout
-from kivy.uix.label import Label
+from typing import Callable, Optional
+
+from kivy.graphics import Color, Rectangle
 from kivy.uix.button import Button
+from kivy.uix.label import Label
 from kivy.uix.slider import Slider
 from kivy.uix.togglebutton import ToggleButton
-from kivy.graphics import Color, Rectangle
 
 from core.scene import Scene
-from utils.screen import screen
-from utils.helpers import get_chinese_font
 from systems.audio import audio_manager
 from systems.save import save_manager
+from utils.helpers import get_chinese_font
+from utils.screen import screen
 
 
 class SettingsScreen(Scene):

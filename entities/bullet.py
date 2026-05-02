@@ -1,13 +1,11 @@
-# -*- coding: utf-8 -*-
 """
 飞机大战 - 子弹
 """
-from typing import Optional
-from kivy.properties import BooleanProperty, NumericProperty
 from kivy.graphics import Color, Ellipse
+from kivy.properties import BooleanProperty, NumericProperty
 
-from core.entity import Entity
 from config.settings import get_config
+from core.entity import Entity
 from utils.screen import screen
 
 

@@ -1,16 +1,16 @@
-# -*- coding: utf-8 -*-
 """
 飞机大战 - 暂停菜单
 """
-from typing import Optional, Callable
-from kivy.uix.floatlayout import FloatLayout
-from kivy.uix.label import Label
-from kivy.uix.button import Button
+from typing import Callable, Optional
+
 from kivy.graphics import Color, Rectangle
+from kivy.uix.button import Button
+from kivy.uix.label import Label
 
 from core.scene import Scene
-from utils.screen import screen
+from systems.audio import audio_manager
 from utils.helpers import get_chinese_font
+from utils.screen import screen
 
 
 class PauseMenu(Scene):
@@ -91,21 +91,18 @@ class PauseMenu(Scene):
 
     def _on_resume_pressed(self, instance) -> None:
         """继续按钮点击"""
-        from systems.audio import audio_manager
         audio_manager.play_sfx('button')
         if self.on_resume:
             self.on_resume()
 
     def _on_restart_pressed(self, instance) -> None:
         """重新开始按钮点击"""
-        from systems.audio import audio_manager
         audio_manager.play_sfx('button')
         if self.on_restart:
             self.on_restart()
 
     def _on_quit_pressed(self, instance) -> None:
         """退出按钮点击"""
-        from systems.audio import audio_manager
         audio_manager.play_sfx('button')
         if self.on_quit:
             self.on_quit()

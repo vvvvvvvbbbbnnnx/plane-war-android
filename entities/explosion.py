@@ -1,14 +1,11 @@
-# -*- coding: utf-8 -*-
 """
 飞机大战 - 爆炸效果
 """
-from typing import Optional, List
 import os
+
 from kivy.graphics import Color, Ellipse
-from kivy.clock import Clock
 
 from core.entity import SpriteEntity
-from utils.screen import screen
 from utils.resources import ResourceManager
 
 
@@ -34,7 +31,7 @@ class Explosion(SpriteEntity):
         self.set_size_rel(size_ratio, size_ratio)
 
         # 动画帧
-        self._frames: List[str] = []
+        self._frames: list[str] = []
         self._current_frame: int = 0
         self._max_frames: int = 15
         self._frame_duration: float = 0.05  # 每帧持续时间

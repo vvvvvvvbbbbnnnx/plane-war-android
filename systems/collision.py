@@ -1,19 +1,11 @@
-# -*- coding: utf-8 -*-
 """
 飞机大战 - 碰撞检测系统
 
 使用空间分区优化碰撞检测性能
 """
-from typing import Dict, List, Set, Tuple, Optional
 from collections import defaultdict
 
 from core.entity import Entity
-
-
-from utils.screen import screen
-
-
-from utils.helpers import clamp
 
 
 class SpatialHash:
@@ -31,7 +23,7 @@ class SpatialHash:
             cell_size: 网格单元大小
         """
         self.cell_size = cell_size
-        self.cells: Dict[Tuple[int, int], Set[Entity]] = defaultdict(set)
+        self.cells: dict[tuple[int, int], set[Entity]] = defaultdict(set)
 
         self._entity_count = 0
 
@@ -40,7 +32,7 @@ class SpatialHash:
         self.cells.clear()
         self._entity_count = 0
 
-    def _get_cell(self, x: float, y: float) -> Tuple[int, int]:
+    def _get_cell(self, x: float, y: float) -> tuple[int, int]:
         """
         获取坐标所在的网格
 
@@ -53,7 +45,7 @@ class SpatialHash:
         """
         return (int(x // self.cell_size), int(y // self.cell_size))
 
-    def _get_cells_for_rect(self, x: float, y: float, w: float, h: float) -> List[Tuple[int, int]]:
+    def _get_cells_for_rect(self, x: float, y: float, w: float, h: float) -> list[tuple[int, int]]:
         """
         获取矩形覆盖的所有网格
 
@@ -107,7 +99,7 @@ class SpatialHash:
 
         self._entity_count -= 1
 
-    def get_nearby(self, entity: Entity) -> Set[Entity]:
+    def get_nearby(self, entity: Entity) -> set[Entity]:
         """
         获取实体附近的潜在碰撞对象
 
@@ -133,7 +125,7 @@ class SpatialHash:
         """获取实体总数"""
         return self._entity_count
 
-    def get_all_entities(self) -> Set[Entity]:
+    def get_all_entities(self) -> set[Entity]:
         """
         获取所有实体
 
@@ -168,7 +160,7 @@ class CollisionSystem:
 
         # 碰撞组配置
         # (type1, type2) -> callback
-        self._collision_groups: Dict[Tuple[str, str], callable] = {}
+        self._collision_groups: dict[tuple[str, str], callable] = {}
 
     def register_collision_group(
         self,
@@ -190,7 +182,7 @@ class CollisionSystem:
         """清空碰撞系统"""
         self.spatial_hash.clear()
 
-    def update(self, entities: List[Entity]) -> None:
+    def update(self, entities: list[Entity]) -> None:
         """
         更新碰撞检测
 
@@ -204,7 +196,7 @@ class CollisionSystem:
             if entity.active:
                 self.spatial_hash.insert(entity)
 
-    def check_collisions(self) -> List[Tuple[Entity, Entity]]:
+    def check_collisions(self) -> list[tuple[Entity, Entity]]:
         """
         检测所有碰撞
 
@@ -224,11 +216,13 @@ class CollisionSystem:
                 if not other.active:
                     continue
 
-                # 创建唯一配对标识
+                # 创建唯一配对标识（双向去重）
                 pair = (id(entity), id(other))
-                if pair in checked_pairs:
+                pair_rev = (id(other), id(entity))
+                if pair in checked_pairs or pair_rev in checked_pairs:
                     continue
                 checked_pairs.add(pair)
+                checked_pairs.add(pair_rev)
 
                 # 检查碰撞组
                 for (type1, type2), callback in self._collision_groups.items():

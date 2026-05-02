@@ -1,12 +1,11 @@
-# -*- coding: utf-8 -*-
 """
 飞机大战 - 音效管理器
 
 管理游戏音效和背景音乐
 """
-from typing import Dict, Optional, Any
+from typing import Any, Optional
+
 from kivy.core.audio import SoundLoader
-from kivy.clock import Clock
 
 
 class AudioManager:
@@ -33,7 +32,7 @@ class AudioManager:
         self._initialized = True
 
         # 音效缓存
-        self.sounds: Dict[str, Any] = {}
+        self.sounds: dict[str, Any] = {}
 
         # 音量设置
         self.music_volume = 0.7
@@ -46,7 +45,7 @@ class AudioManager:
         # 是否启用
         self.enabled = True
 
-    def load_sounds(self, sound_config: Dict[str, str]) -> None:
+    def load_sounds(self, sound_config: dict[str, str]) -> None:
         """
         加载音效
 

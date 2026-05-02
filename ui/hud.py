@@ -1,19 +1,16 @@
-# -*- coding: utf-8 -*-
 """
 飞机大战 - HUD（游戏内界面）
 
 显示分数、生命、炸弹等信息
 """
-from typing import Optional
+from kivy.clock import Clock
+from kivy.properties import NumericProperty
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.label import Label
 from kivy.uix.progressbar import ProgressBar
-from kivy.uix.image import Image
-from kivy.graphics import Color, Rectangle, Line
-from kivy.properties import NumericProperty
 
-from utils.screen import screen
 from utils.helpers import get_chinese_font
+from utils.screen import screen
 
 
 class HUD(FloatLayout):
@@ -188,7 +185,6 @@ class HUD(FloatLayout):
         self.add_widget(message)
 
         # 定时移除
-        from kivy.clock import Clock
         Clock.schedule_once(lambda dt: self.remove_widget(message), duration)
 
     def on_size(self, *args) -> None:

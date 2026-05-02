@@ -1,31 +1,32 @@
-# -*- coding: utf-8 -*-
 """
 飞机大战 - 游戏主循环
 
 整合所有模块，管理游戏状态和场景切换
 """
 import random
-from typing import Optional, Dict, Any, List
+import time
+import traceback
 from enum import Enum
-from kivy.uix.floatlayout import FloatLayout
-from kivy.clock import Clock
+from typing import Optional
+
 from kivy.core.window import Window
+from kivy.uix.floatlayout import FloatLayout
 
 from config.settings import get_config
 from core.pool import MultiTypePool
-from entities.player import Player
-from entities.enemy import Enemy
 from entities.boss import Boss
 from entities.bullet import Bullet
-from entities.powerup import PowerUp
+from entities.enemy import Enemy
 from entities.explosion import Explosion
-from systems.collision import CollisionSystem
+from entities.player import Player
+from entities.powerup import PowerUp
+from systems.achievement import achievement_manager
 from systems.audio import audio_manager
+from systems.collision import CollisionSystem
 from systems.particle import particle_system
 from systems.save import save_manager
-from systems.achievement import achievement_manager
-from utils.screen import screen, update_screen
 from utils.helpers import chance, random_int
+from utils.screen import screen, update_screen
 
 
 class GameState(Enum):
@@ -68,10 +69,10 @@ class Game:
 
         # 实体
         self.player: Optional[Player] = None
-        self.enemies: List[Enemy] = []
-        self.bullets: List[Bullet] = []
-        self.powerups: List[PowerUp] = []
-        self.explosions: List[Explosion] = []
+        self.enemies: list[Enemy] = []
+        self.bullets: list[Bullet] = []
+        self.powerups: list[PowerUp] = []
+        self.explosions: list[Explosion] = []
         self.boss: Optional[Boss] = None
 
         # 对象池
@@ -272,7 +273,7 @@ class Game:
         # 检查关卡进度
         self._check_level_progress(level_config)
 
-    def _spawn_enemy(self, enemy_types: List[str]) -> None:
+    def _spawn_enemy(self, enemy_types: list[str]) -> None:
         """生成敌机"""
         enemy_type = random.choice(enemy_types)
         pool_name = f'enemy_{enemy_type}'
@@ -389,7 +390,6 @@ class Game:
         try:
             self.collision.check_collisions()
         except Exception as e:
-            import traceback
             print(f'[Game] 碰撞检测异常: {e}')
             traceback.print_exc()
 
@@ -592,7 +592,6 @@ class Game:
         if self.state != GameState.PLAYING or not self.player:
             return False
 
-        import time
         current_time = time.time()
 
         # 检测双击

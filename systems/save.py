@@ -1,10 +1,10 @@
-# -*- coding: utf-8 -*-
 """
 飞机大战 - 存档系统
 
 管理游戏存档和设置
 """
-from typing import Dict, Any, Optional
+from typing import Any
+
 from kivy.storage.jsonstore import JsonStore
 
 
@@ -25,7 +25,7 @@ class SaveManager:
         """
         self.store = JsonStore(filename)
 
-    def save_game(self, game_state: Dict[str, Any]) -> None:
+    def save_game(self, game_state: dict[str, Any]) -> None:
         """
         保存游戏状态
 
@@ -34,7 +34,7 @@ class SaveManager:
         """
         self.store.put('game', **game_state)
 
-    def load_game(self) -> Dict[str, Any]:
+    def load_game(self) -> dict[str, Any]:
         """
         加载游戏状态
 
@@ -76,7 +76,7 @@ class SaveManager:
             return self.store.get('high_score').get('value', 0)
         return 0
 
-    def save_settings(self, settings: Dict[str, Any]) -> None:
+    def save_settings(self, settings: dict[str, Any]) -> None:
         """
         保存设置
 
@@ -85,7 +85,7 @@ class SaveManager:
         """
         self.store.put('settings', **settings)
 
-    def load_settings(self) -> Dict[str, Any]:
+    def load_settings(self) -> dict[str, Any]:
         """
         加载设置
 
@@ -101,7 +101,7 @@ class SaveManager:
             'difficulty': 'normal',
         }
 
-    def save_achievements(self, achievements: Dict[str, Any]) -> None:
+    def save_achievements(self, achievements: dict[str, Any]) -> None:
         """
         保存成就
 
@@ -110,7 +110,7 @@ class SaveManager:
         """
         self.store.put('achievements', **achievements)
 
-    def load_achievements(self) -> Dict[str, Any]:
+    def load_achievements(self) -> dict[str, Any]:
         """
         加载成就
 
@@ -121,7 +121,7 @@ class SaveManager:
             return dict(self.store.get('achievements'))
         return {}
 
-    def save_statistics(self, stats: Dict[str, Any]) -> None:
+    def save_statistics(self, stats: dict[str, Any]) -> None:
         """
         保存统计数据
 
@@ -130,7 +130,7 @@ class SaveManager:
         """
         self.store.put('statistics', **stats)
 
-    def load_statistics(self) -> Dict[str, Any]:
+    def load_statistics(self) -> dict[str, Any]:
         """
         加载统计数据
 
@@ -147,7 +147,7 @@ class SaveManager:
             'max_level_reached': 0,
         }
 
-    def update_statistics(self, updates: Dict[str, Any]) -> None:
+    def update_statistics(self, updates: dict[str, Any]) -> None:
         """
         更新统计数据
 

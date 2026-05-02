@@ -1,14 +1,12 @@
-# -*- coding: utf-8 -*-
 """
 飞机大战 - 场景管理器
 
 管理游戏场景的切换和生命周期
 """
-from typing import Optional, Dict, Type
 from enum import Enum
+from typing import Optional
 
 from kivy.uix.floatlayout import FloatLayout
-from kivy.clock import Clock
 
 
 class SceneState(Enum):
@@ -30,7 +28,7 @@ class Scene(FloatLayout):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.state = SceneState.CREATED
-        self.scene_manager: Optional['SceneManager'] = None
+        self.scene_manager: Optional[SceneManager] = None
 
     def on_enter(self) -> None:
         """进入场景时调用"""
@@ -81,7 +79,7 @@ class SceneManager:
             initial_scene: 初始场景
         """
         self.current_scene: Optional[Scene] = None
-        self.scenes: Dict[str, Scene] = {}
+        self.scenes: dict[str, Scene] = {}
         self._scene_stack: list = []
 
         # 场景切换动画

@@ -1,12 +1,11 @@
-# -*- coding: utf-8 -*-
 """
 游戏配置模块
 所有游戏常量和配置集中管理
 """
-from dataclasses import dataclass, field
-from typing import Dict, List, Any, Optional
 import json
 import os
+from dataclasses import dataclass, field
+from typing import Optional
 
 
 @dataclass
@@ -62,7 +61,7 @@ class PowerUpConfig:
     speed: float = 2.0
     width_ratio: float = 0.07
     height_ratio: float = 0.04
-    types: List[str] = field(default_factory=lambda: ['health', 'weapon', 'shield', 'bomb'])
+    types: list[str] = field(default_factory=lambda: ['health', 'weapon', 'shield', 'bomb'])
 
 
 @dataclass
@@ -71,7 +70,7 @@ class LevelConfig:
     level: int = 1
     enemies_to_kill: int = 15
     spawn_rate: float = 1.5
-    enemy_types: List[str] = field(default_factory=lambda: ['normal'])
+    enemy_types: list[str] = field(default_factory=lambda: ['normal'])
     boss_health: int = 20
 
 
@@ -89,13 +88,13 @@ class GameConfig:
 
     # 实体配置
     player: PlayerConfig = field(default_factory=PlayerConfig)
-    enemies: Dict[str, EnemyConfig] = field(default_factory=dict)
+    enemies: dict[str, EnemyConfig] = field(default_factory=dict)
     boss: BossConfig = field(default_factory=BossConfig)
     bullet: BulletConfig = field(default_factory=BulletConfig)
     powerup: PowerUpConfig = field(default_factory=PowerUpConfig)
 
     # 关卡配置
-    levels: List[LevelConfig] = field(default_factory=list)
+    levels: list[LevelConfig] = field(default_factory=list)
 
     # 音效配置
     sound_enabled: bool = True
@@ -125,7 +124,7 @@ class GameConfig:
         if not self.levels:
             self.levels = self._generate_levels()
 
-    def _generate_levels(self) -> List[LevelConfig]:
+    def _generate_levels(self) -> list[LevelConfig]:
         """生成关卡配置"""
         levels = []
         for i in range(1, 11):
@@ -159,7 +158,7 @@ class GameConfig:
         if not os.path.exists(path):
             return cls()
 
-        with open(path, 'r', encoding='utf-8') as f:
+        with open(path, encoding='utf-8') as f:
             data = json.load(f)
 
         # 解析嵌套配置

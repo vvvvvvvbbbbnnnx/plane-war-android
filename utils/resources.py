@@ -1,15 +1,15 @@
-# -*- coding: utf-8 -*-
 """
 飞机大战 - 资源管理器
 
 统一管理游戏资源（图片、音效、字体等）的加载和缓存。
 """
-from typing import Dict, List, Optional, Any
 import os
 import sys
-from kivy.resources import resource_add_path, resource_find
-from kivy.core.image import Image as CoreImage
+from typing import Any, Optional
+
 from kivy.core.audio import SoundLoader
+from kivy.core.image import Image as CoreImage
+from kivy.resources import resource_add_path, resource_find
 
 
 class ResourceManager:
@@ -44,8 +44,8 @@ class ResourceManager:
         self._add_resource_paths()
 
         # 缓存
-        self._image_cache: Dict[str, Any] = {}
-        self._sound_cache: Dict[str, Any] = {}
+        self._image_cache: dict[str, Any] = {}
+        self._sound_cache: dict[str, Any] = {}
         self._loaded: bool = False
 
     def _find_base_path(self) -> str:

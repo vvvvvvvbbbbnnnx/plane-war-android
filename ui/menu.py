@@ -1,19 +1,17 @@
-# -*- coding: utf-8 -*-
 """
 飞机大战 - 主菜单
 """
-from typing import Optional, Callable
-from kivy.uix.floatlayout import FloatLayout
-from kivy.uix.label import Label
-from kivy.uix.button import Button
-from kivy.uix.image import Image
+from typing import Callable, Optional
+
 from kivy.graphics import Color, Rectangle
-from kivy.animation import Animation
+from kivy.uix.button import Button
+from kivy.uix.label import Label
 
 from core.scene import Scene
-from utils.screen import screen
-from utils.helpers import get_chinese_font
+from systems.audio import audio_manager
 from systems.save import save_manager
+from utils.helpers import get_chinese_font
+from utils.screen import screen
 
 
 class MainMenu(Scene):
@@ -96,7 +94,6 @@ class MainMenu(Scene):
     def _on_start_pressed(self, instance) -> None:
         """开始按钮点击"""
         # 播放按钮音效
-        from systems.audio import audio_manager
         audio_manager.play_sfx('button')
 
         # 回调
@@ -105,7 +102,6 @@ class MainMenu(Scene):
 
     def _on_settings_pressed(self, instance) -> None:
         """设置按钮点击"""
-        from systems.audio import audio_manager
         audio_manager.play_sfx('button')
         # 打开设置界面
         if self.parent and hasattr(self.parent, '_show_settings'):

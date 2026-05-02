@@ -1,15 +1,15 @@
-# -*- coding: utf-8 -*-
 """
 飞机大战 - 实体基类
 
 提供所有游戏实体的基础类，包含位置、速度、碰撞等通用属性和方法。
 """
-from typing import Tuple, Optional, Dict, Any
-from kivy.uix.widget import Widget
-from kivy.uix.image import Image
-from kivy.properties import NumericProperty, BooleanProperty, StringProperty
-from kivy.graphics import Color, Rectangle, Ellipse, Line, PushMatrix, PopMatrix, Translate
+from typing import Optional
 
+from kivy.properties import BooleanProperty, NumericProperty, StringProperty
+from kivy.uix.image import Image
+from kivy.uix.widget import Widget
+
+from utils.resources import ResourceManager
 from utils.screen import screen
 
 
@@ -91,8 +91,6 @@ class Entity(Widget):
         Returns:
             是否成功加载图片
         """
-        from utils.resources import ResourceManager
-
         # 检查资源是否存在
         if not ResourceManager.exists(source):
             return False
@@ -139,7 +137,7 @@ class Entity(Widget):
         self.x += self.velocity_x * dt * 60  # 标准化为60FPS
         self.y += self.velocity_y * dt * 60
 
-    def get_bounds(self) -> Tuple[float, float, float, float]:
+    def get_bounds(self) -> tuple[float, float, float, float]:
         """
         获取碰撞边界
 
@@ -152,7 +150,7 @@ class Entity(Widget):
         y = self.y + self._hitbox_offset_y + (self.height - h) / 2
         return (x, y, w, h)
 
-    def get_center(self) -> Tuple[float, float]:
+    def get_center(self) -> tuple[float, float]:
         """
         获取中心点坐标
 
@@ -271,8 +269,6 @@ class SpriteEntity(Entity):
         Returns:
             是否成功加载
         """
-        from utils.resources import ResourceManager
-
         self._frames = []
         for path in frame_paths:
             if ResourceManager.exists(path):

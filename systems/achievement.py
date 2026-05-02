@@ -1,11 +1,10 @@
-# -*- coding: utf-8 -*-
 """
 飞机大战 - 成就系统
 
 管理游戏成就的解锁和显示
 """
-from typing import Dict, List, Optional, Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from typing import Callable, Optional
 
 from systems.save import save_manager
 
@@ -47,7 +46,7 @@ class AchievementManager:
     def __init__(self):
         """初始化成就管理器"""
         # 定义所有成就
-        self.achievements: Dict[str, Achievement] = {
+        self.achievements: dict[str, Achievement] = {
             # 击杀成就
             'first_blood': Achievement(
                 'first_blood', '初次击杀', '击败第一个敌人',
@@ -233,15 +232,15 @@ class AchievementManager:
         """获取成就"""
         return self.achievements.get(achievement_id)
 
-    def get_all_achievements(self) -> List[Achievement]:
+    def get_all_achievements(self) -> list[Achievement]:
         """获取所有成就"""
         return list(self.achievements.values())
 
-    def get_unlocked_achievements(self) -> List[Achievement]:
+    def get_unlocked_achievements(self) -> list[Achievement]:
         """获取已解锁的成就"""
         return [a for a in self.achievements.values() if a.unlocked]
 
-    def get_visible_achievements(self) -> List[Achievement]:
+    def get_visible_achievements(self) -> list[Achievement]:
         """获取可见的成就（非隐藏或已解锁）"""
         return [
             a for a in self.achievements.values()

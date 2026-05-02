@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 飞机大战 - 入口文件
 
@@ -11,23 +10,22 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from kivy.app import App
+from kivy.clock import Clock
+from kivy.core.window import Window
+from kivy.graphics import Color, Rectangle
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.image import Image
-from kivy.core.window import Window
-from kivy.clock import Clock
-from kivy.graphics import Color, Rectangle
 
 from config.settings import get_config
-from core.game import game, GameState
-from ui.menu import MainMenu
-from ui.hud import HUD
-from ui.pause import PauseMenu
-from ui.game_over import GameOverScreen
-from ui.settings import SettingsScreen
-from utils.screen import screen, update_screen
-from utils.resources import ResourceManager
+from core.game import GameState, game
 from systems.audio import audio_manager
-from systems.save import save_manager
+from ui.game_over import GameOverScreen
+from ui.hud import HUD
+from ui.menu import MainMenu
+from ui.pause import PauseMenu
+from ui.settings import SettingsScreen
+from utils.resources import ResourceManager
+from utils.screen import update_screen
 
 
 class GameWidget(FloatLayout):
@@ -409,7 +407,7 @@ class PlaneWarApp(App):
         Window.fullscreen = 'auto'
 
         # 加载配置
-        config = get_config()
+        get_config()
 
         # 初始化音效系统
         self._init_audio()

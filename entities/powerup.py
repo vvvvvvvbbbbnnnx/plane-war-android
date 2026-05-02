@@ -1,14 +1,13 @@
-# -*- coding: utf-8 -*-
 """
 飞机大战 - 道具
 """
-from typing import Optional, Dict, Tuple
 import random
-from kivy.properties import StringProperty
-from kivy.graphics import Color, Ellipse, Rectangle, Line
 
-from core.entity import Entity
+from kivy.graphics import Color, Ellipse, Line, Rectangle
+from kivy.properties import StringProperty
+
 from config.settings import get_config
+from core.entity import Entity
 from utils.screen import screen
 
 
@@ -23,7 +22,7 @@ class PowerUp(Entity):
     powerup_type = StringProperty('health')
 
     # 道具颜色配置
-    TYPE_COLORS: Dict[str, Tuple[float, float, float]] = {
+    TYPE_COLORS: dict[str, tuple[float, float, float]] = {
         'health': (0.2, 1, 0.4),    # 绿色
         'weapon': (1, 1, 0.2),      # 黄色
         'shield': (0.2, 1, 1),      # 青色
@@ -31,7 +30,7 @@ class PowerUp(Entity):
     }
 
     # 道具图片映射
-    TYPE_IMAGES: Dict[str, str] = {
+    TYPE_IMAGES: dict[str, str] = {
         'health': 'powerup_health.png',
         'weapon': 'powerup_weapon.png',
         'shield': 'powerup_shield.png',
@@ -75,7 +74,7 @@ class PowerUp(Entity):
         self._hitbox_scale = 0.8
 
     @property
-    def powerup_type(self) -> str:
+    def powerup_type(self) -> str:  # noqa: F811
         return self._powerup_type
 
     def setup_type(self, powerup_type: str) -> None:

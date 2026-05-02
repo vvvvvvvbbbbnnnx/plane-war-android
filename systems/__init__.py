@@ -1,10 +1,9 @@
-# -*- coding: utf-8 -*-
 """飞机大战 - 系统模块"""
-from .collision import SpatialHash, CollisionSystem
+from .achievement import Achievement, AchievementManager
 from .audio import AudioManager
-from .particle import ParticleSystem, Particle
+from .collision import CollisionSystem, SpatialHash
+from .particle import Particle, ParticleSystem
 from .save import SaveManager
-from .achievement import AchievementManager, Achievement
 
 __all__ = [
     'SpatialHash', 'CollisionSystem',

@@ -1,7 +1,9 @@
-name: Build and Release APK
+name: CI/CD Pipeline
 
 on:
   push:
+    branches: [main]
+  pull_request:
     branches: [main]
   workflow_dispatch:
 
@@ -9,7 +11,47 @@ permissions:
   contents: write
 
 jobs:
-  build:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    - run: pip install ruff
+    - run: ruff check .
+    - run: ruff format --check .
+
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    - run: pip install mypy kivy
+    - run: mypy --ignore-missing-imports config/ core/ systems/ utils/
+
+  test:
+    needs: [lint, typecheck]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y xvfb
+    - run: pip install -e ".[dev]"
+    - name: Run tests
+      run: |
+        xvfb-run pytest tests/ -v --tb=short
+
+  build-apk:
+    needs: [test]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     container:
       image: kivy/buildozer:latest
@@ -29,7 +71,6 @@ jobs:
 
     - name: Create Release
       uses: softprops/action-gh-release@v2
-      if: github.event_name == 'push'
       with:
         tag_name: v1.0.${{ github.run_number }}
         name: Release v1.0.${{ github.run_number }}

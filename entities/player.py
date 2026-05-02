@@ -1,15 +1,14 @@
-# -*- coding: utf-8 -*-
 """
 飞机大战 - 玩家飞机
 """
-from typing import Optional, Tuple
-from kivy.properties import NumericProperty, BooleanProperty
-from kivy.graphics import Color, Rectangle, Ellipse, Line
+import time
 
-from core.entity import Entity
+from kivy.graphics import Color, Ellipse, Line, Rectangle
+from kivy.properties import BooleanProperty, NumericProperty
+
 from config.settings import get_config
+from core.entity import Entity
 from utils.screen import screen
-from utils.resources import ResourceManager
 
 
 class Player(Entity):
@@ -285,7 +284,6 @@ class Player(Entity):
 
             # 无敌闪烁
             if self.invincible:
-                import time
                 if int(time.time() * 10) % 2:
                     Color(1, 1, 1, 0.5)
                     Rectangle(pos=self.pos, size=self.size)

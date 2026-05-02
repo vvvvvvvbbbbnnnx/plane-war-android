@@ -1,16 +1,13 @@
-# -*- coding: utf-8 -*-
 """
 飞机大战 - 敌机
 """
-from typing import Optional, List
-import random
+from kivy.graphics import Color, Line, Rectangle
 from kivy.properties import NumericProperty, StringProperty
-from kivy.graphics import Color, Rectangle, Ellipse, Line
 
-from core.entity import Entity
 from config.settings import get_config
-from utils.screen import screen
+from core.entity import Entity
 from utils.helpers import chance
+from utils.screen import screen
 
 
 class Enemy(Entity):

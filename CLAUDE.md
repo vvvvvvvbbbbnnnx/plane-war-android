@@ -2,7 +2,7 @@
 
 ## 项目概述
 
-请添加项目描述。
+[![Python](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/) [![Kivy](https://img.shields.io/badge/kivy-2.2+-green.svg)](https://kivy.org/) [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE) [![CI/CD](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/vvvvvvvvbbbbnnnx/plane-war-android/actions)
 
 ## 目录结构
 
@@ -55,6 +55,13 @@ plane-war-refactor/
 │   ├── collision.py
 │   ├── particle.py
 │   └── ... (1 more files)
+├── tests/
+│   ├── __init__.py
+│   ├── conftest.py
+│   ├── test_achievement.py
+│   ├── test_collision.py
+│   ├── test_config.py
+│   └── ... (2 more files)
 ├── ui/
 │   ├── __init__.py
 │   ├── game_over.py
@@ -71,15 +78,21 @@ plane-war-refactor/
 ├── buildozer.spec
 ├── main.py
 ├── pixel_shmup.zip
-├── shmup.zip
-└── ... (2 more files)
+├── plane_war_save.json
+└── ... (4 more files)
 ```
 
 ## 技术栈
 
+- **编程语言**: Python
 - **工具**: GitHub Actions
+- **包管理**: poetry/pip
+
+## 开发命令
+
+- **测试**: `pytest`
 
 ## 备注
 
 - 此文件由 Claude Code 自动生成
-- 最后更新: 2026-04-28 20:34:13
+- 最后更新: 2026-05-03 01:16:51

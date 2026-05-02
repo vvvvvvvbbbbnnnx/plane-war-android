@@ -1,14 +1,13 @@
-# -*- coding: utf-8 -*-
 """
 飞机大战 - 屏幕适配器
 
 处理不同设备和屏幕尺寸的适配问题。
 """
-from typing import Tuple, Optional
+from typing import Optional
+
 from kivy.core.window import Window
 from kivy.metrics import dp, sp
 from kivy.utils import platform
-from kivy.properties import NumericProperty
 
 
 class ScreenAdapter:
@@ -150,7 +149,7 @@ class ScreenAdapter:
         """
         return value * self.scale
 
-    def center(self) -> Tuple[float, float]:
+    def center(self) -> tuple[float, float]:
         """
         获取屏幕中心点
 
@@ -159,7 +158,7 @@ class ScreenAdapter:
         """
         return (self.real_width / 2, self.real_height / 2)
 
-    def safe_center(self) -> Tuple[float, float]:
+    def safe_center(self) -> tuple[float, float]:
         """
         获取安全区域中心点
 
@@ -173,7 +172,7 @@ class ScreenAdapter:
             self.safe_area_bottom + safe_height / 2
         )
 
-    def get_safe_rect(self) -> Tuple[float, float, float, float]:
+    def get_safe_rect(self) -> tuple[float, float, float, float]:
         """
         获取安全区域矩形
 

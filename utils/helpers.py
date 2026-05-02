@@ -1,11 +1,13 @@
-# -*- coding: utf-8 -*-
 """
 飞机大战 - 工具函数
 
 提供常用的工具函数。
 """
-from typing import Optional
+import math
 import os
+import random
+from typing import Optional
+
 from kivy.utils import platform
 
 
@@ -139,9 +141,6 @@ def ease_out_bounce(t: float) -> float:
         return 7.5625 * t * t + 0.984375
 
 
-import math
-
-
 def distance(x1: float, y1: float, x2: float, y2: float) -> float:
     """
     计算两点之间的距离
@@ -198,7 +197,6 @@ def random_in_range(min_val: float, max_val: float) -> float:
     Returns:
         随机数
     """
-    import random
     return random.uniform(min_val, max_val)
 
 
@@ -213,7 +211,6 @@ def random_int(min_val: int, max_val: int) -> int:
     Returns:
         随机整数
     """
-    import random
     return random.randint(min_val, max_val)
 
 
@@ -227,5 +224,4 @@ def chance(probability: float) -> bool:
     Returns:
         是否命中
     """
-    import random
     return random.random() < probability
