@@ -57,6 +57,10 @@ class Enemy(Entity):
         self._flash_timer = 0.0
         self._move_amplitude = screen.rel_w(0.06)
         self._move_frequency = 2.0 + (1.5 if enemy_type == 'fast' else 0)
+        # 确保移动模式从 TYPE_CONFIGS 读取（config 路径无 move 字段）
+        tc = self.TYPE_CONFIGS.get(enemy_type, {})
+        if 'move' in tc and self.move_pattern == 'straight':
+            self.move_pattern = tc['move']
 
     def _setup_type(self) -> None:
         config = get_config()
