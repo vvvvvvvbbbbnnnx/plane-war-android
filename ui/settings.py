@@ -147,6 +147,7 @@ class SettingsScreen(Scene):
         sound_on = settings.get('sound_enabled', True)
         self.sound_toggle.state = 'down' if sound_on else 'normal'
         self.sound_toggle.text = '开' if sound_on else '关'
+        audio_manager.enabled = sound_on
         # 高亮当前难度
         if self._difficulty in self._difficulty_btns:
             for btn in self._difficulty_btns.values():

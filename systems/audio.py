@@ -72,6 +72,8 @@ class AudioManager:
 
         sound = self.sounds[name]
         sound.volume = self.sfx_volume
+        if sound.state == 'play':
+            sound.stop()
         sound.play()
 
     def play_music(self, name: str, loop: bool = True) -> None:
