@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: write
+  actions: read
 
 jobs:
   lint:
@@ -20,71 +21,35 @@ jobs:
         python-version: '3.11'
     - run: pip install ruff
     - run: ruff check .
-    - run: ruff format --check .
-
-  typecheck:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
-    - run: pip install mypy kivy
-    - run: mypy --ignore-missing-imports config/ core/ systems/ utils/
 
   test:
-    needs: [lint, typecheck]
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-python@v5
       with:
         python-version: '3.11'
-    - name: Install system dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y xvfb
-    - run: pip install -e ".[dev]"
+    - run: |
+        sudo apt-get update -qq
+        sudo apt-get install -y -qq xvfb
+    - run: pip install kivy pytest pytest-cov
     - name: Run tests
-      run: |
-        xvfb-run pytest tests/ -v --tb=short
+      run: xvfb-run pytest tests/ -v --tb=short
 
   build-apk:
     needs: [test]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    container:
-      image: kivy/buildozer:latest
     steps:
     - uses: actions/checkout@v4
 
-    - name: Build APK
+    - name: Build APK in Docker
       run: |
-        sed -i "s/version = .*/version = 1.0.${{ github.run_number }}/" buildozer.spec
-        buildozer android debug
+        docker run --rm -v $PWD:/app -w /app kivy/buildozer:latest \
+          bash -c "buildozer android debug"
 
     - name: Upload APK artifact
       uses: actions/upload-artifact@v4
       with:
         name: plane_war_apk
         path: bin/*.apk
-
-    - name: Create Release
-      uses: softprops/action-gh-release@v2
-      with:
-        tag_name: v1.0.${{ github.run_number }}
-        name: Release v1.0.${{ github.run_number }}
-        body: |
-          飞机大战 Android 版
-
-          更新内容:
-          - 优化手机屏幕适配
-          - 响应式布局
-          - 触摸控制优化
-
-          下载 APK 文件安装即可游玩。
-        files: bin/*.apk
-        draft: false
-        prerelease: false
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

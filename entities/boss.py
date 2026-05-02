@@ -41,6 +41,7 @@ class Boss(Entity):
 
         self._image_loaded = self.setup_image('boss.png')
         self._hitbox_scale = 0.85
+        self._move_timer = 0.0
 
     @property
     def is_phase2(self) -> bool:  # noqa: F811
@@ -104,8 +105,6 @@ class Boss(Entity):
         # 边界钳制
         self.x = max(0, min(screen.real_width - self.width, self.x))
         self.y = max(screen.real_height * 0.3, min(screen.real_height - self.height, self.y))
-
-    _move_timer = 0.0  # class-level default
 
     def should_shoot(self) -> bool:
         if self._shoot_timer >= self._shoot_interval:
