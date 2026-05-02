@@ -1,15 +1,12 @@
-name: CI/CD Pipeline
+name: CI/CD
 
 on:
   push:
-    branches: [main]
-  pull_request:
     branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: write
-  actions: read
 
 jobs:
   lint:
@@ -17,8 +14,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
+      with: {python-version: '3.11'}
     - run: pip install ruff
     - run: ruff check .
 
@@ -27,29 +23,34 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
+      with: {python-version: '3.11'}
     - run: |
         sudo apt-get update -qq
-        sudo apt-get install -y -qq xvfb
+        sudo apt-get install -y -qq xvfb libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libgstreamer1.0-dev gstreamer1.0-plugins-base libmtdev-dev
     - run: pip install kivy pytest pytest-cov
-    - name: Run tests
-      run: xvfb-run pytest tests/ -v --tb=short
+    - run: xvfb-run pytest tests/ -v --tb=short
 
   build-apk:
-    needs: [test]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    container:
+      image: kivy/buildozer:latest
     steps:
     - uses: actions/checkout@v4
-
-    - name: Build APK in Docker
-      run: |
-        docker run --rm -v $PWD:/app -w /app kivy/buildozer:latest \
-          bash -c "buildozer android debug"
-
-    - name: Upload APK artifact
-      uses: actions/upload-artifact@v4
+    - run: buildozer android debug
+    - uses: actions/upload-artifact@v4
       with:
         name: plane_war_apk
         path: bin/*.apk
+    - uses: softprops/action-gh-release@v2
+      if: github.event_name == 'push'
+      with:
+        tag_name: v1.0.${{ github.run_number }}
+        name: Release v1.0.${{ github.run_number }}
+        body: |
+          飞机大战 Android 版
+          下载 APK 安装即可游玩。
+        files: bin/*.apk
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
