@@ -97,7 +97,7 @@ class HUD(FloatLayout):
         self.boss_health_bar = None
         self.boss_name_label = None
 
-    def update(self, score: int, level: int, lives: int, bombs: int) -> None:
+    def update(self, score: int, level: int, lives: int, bombs: int, combo: int = 0) -> None:
         """
         更新HUD显示
 
@@ -111,6 +111,13 @@ class HUD(FloatLayout):
         self.level_label.text = f'关卡: {level}'
         self.lives_label.text = f'❤ x {lives}'
         self.bombs_label.text = f'💣 x {bombs}'
+        if combo >= 10:
+            self.score_label.text = f'{combo} COMBO! 分数: {score}'
+            self.score_label.color = (1, 0.8, 0.2, 1)
+        elif combo >= 5:
+            self.score_label.color = (1, 1, 0.5, 1)
+        else:
+            self.score_label.color = (1, 1, 1, 1)
 
     def show_boss_health(self, boss_name: str = 'Boss') -> None:
         """

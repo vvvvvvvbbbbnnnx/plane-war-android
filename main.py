@@ -143,7 +143,8 @@ class GameWidget(FloatLayout):
                     score=self.game.score,
                     level=self.game.level,
                     lives=self.game.player.lives,
-                    bombs=self.game.player.bombs
+                    bombs=self.game.player.bombs,
+                    combo=getattr(self.game, 'combo', 0)
                 )
 
                 # 更新Boss血条

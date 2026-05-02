@@ -95,6 +95,16 @@ class Game:
         # 根 widget 引用，用于清理僵尸 widget
         self.root_widget: Optional[FloatLayout] = None
 
+        # 屏幕震动
+        self.shake_intensity = 0.0
+        self.shake_decay = 0.85
+
+        # 连击系统
+        self.combo = 0
+        self.combo_timer = 0.0
+        self.combo_timeout = 1.5  # 秒内连续击杀算连击
+        self.max_combo = 0
+
         # 绑定窗口大小变化
         Window.bind(on_resize=self._on_window_resize)
 
@@ -267,6 +277,12 @@ class Game:
         # 更新粒子
         particle_system.update(dt)
 
+        # 更新屏幕震动
+        self._update_shake(dt)
+
+        # 更新连击计时器
+        self._update_combo(dt)
+
         # 碰撞检测
         self._check_collisions()
 
@@ -404,8 +420,8 @@ class Game:
 
         if not enemy.active:
             # 敌机死亡
-            self.score += enemy.score
-            self.enemies_killed += 1
+            self._on_kill()
+            self.score += enemy.score * self._combo_bonus()
 
             # 创建爆炸
             self._create_explosion(enemy.center, enemy.width)
@@ -441,10 +457,14 @@ class Game:
 
         if not boss.active:
             # Boss死亡
-            self.score += boss.score
+            self.score += boss.score * self._combo_bonus()
 
-            # 创建大爆炸
+            # 大爆炸 + 震动 + 多重粒子
             self._create_explosion(boss.center, boss.width * 1.5)
+            self._create_explosion((boss.x, boss.center_y), boss.width * 0.6)
+            self._create_explosion((boss.right, boss.center_y), boss.width * 0.6)
+            particle_system.emit(boss.center_x, boss.center_y, 'explosion', count=40, spread=100, speed=200)
+            self.trigger_shake(18.0)
 
             # 移除Boss
             self.boss = None
@@ -474,6 +494,8 @@ class Game:
 
         # 玩家受伤
         player.take_damage()
+        self.combo = 0  # 受伤断连击
+        self.trigger_shake(4.0)
 
         # 播放音效
         audio_manager.play_sfx('hit')
@@ -538,6 +560,49 @@ class Game:
         # 播放Boss音效
         audio_manager.play_sfx('boss_appear')
 
+    def trigger_shake(self, intensity: float = 8.0) -> None:
+        """触发屏幕震动"""
+        self.shake_intensity = max(self.shake_intensity, intensity)
+
+    def _update_shake(self, dt: float) -> None:
+        """更新屏幕震动"""
+        if self.shake_intensity < 0.3:
+            self.shake_intensity = 0
+            if self.root_widget:
+                self.root_widget.pos = (0, 0)
+            return
+        self.shake_intensity *= self.shake_decay
+        import random as _rnd
+        ox = _rnd.uniform(-1, 1) * self.shake_intensity
+        oy = _rnd.uniform(-1, 1) * self.shake_intensity
+        if self.root_widget:
+            self.root_widget.pos = (int(ox), int(oy))
+
+    def _update_combo(self, dt: float) -> None:
+        """更新连击计时器"""
+        if self.combo > 0:
+            self.combo_timer -= dt
+            if self.combo_timer <= 0:
+                self.combo = 0
+
+    def _on_kill(self) -> None:
+        """击杀计数 + 连击"""
+        self.enemies_killed += 1
+        self.combo += 1
+        self.combo_timer = self.combo_timeout
+        if self.combo > self.max_combo:
+            self.max_combo = self.combo
+
+    def _combo_bonus(self) -> int:
+        """连击分数加成"""
+        if self.combo >= 50:
+            return 5
+        if self.combo >= 20:
+            return 3
+        if self.combo >= 10:
+            return 2
+        return 1
+
     def _clear_all_entities(self) -> None:
         """清空所有实体"""
         self.player = None
@@ -583,6 +648,9 @@ class Game:
                 self.boss_spawned = False
                 self.level += 1
                 self.enemies_killed = 0
+
+        # 震屏
+        self.trigger_shake(12.0)
 
         # 播放音效
         audio_manager.play_sfx('bomb')
