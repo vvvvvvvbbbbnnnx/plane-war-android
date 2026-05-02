@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "plane-war-android"
-version = "1.0.0"
+version = "1.0.20"
 description = "A commercial-grade 2D airplane shooting game built with Python/Kivy, targeting Android via Buildozer"
 readme = "README.md"
 license = {text = "MIT"}
