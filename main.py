@@ -134,7 +134,7 @@ class GameWidget(FloatLayout):
         self._update_background(dt)
 
         if self.game.state == GameState.PLAYING:
-            # 更新游戏逻辑
+            # 更新游戏逻辑（实体的 widget 挂载/卸载已内联在 game.py 的生命周期中）
             self.game.update(dt)
 
             # 更新HUD
@@ -154,9 +154,6 @@ class GameWidget(FloatLayout):
                 else:
                     self.hud.hide_boss_health()
 
-            # 更新实体显示
-            self._update_entities()
-
             # 检查游戏结束
             if self.game.state == GameState.GAME_OVER:
                 self._show_game_over()
@@ -175,60 +172,11 @@ class GameWidget(FloatLayout):
             if self.bg2.y <= -Window.height:
                 self.bg2.y = Window.height
 
-    def _update_entities(self) -> None:
-        """更新实体显示，仅在有变化时修正 z-order"""
-        changed = False
-
-        for enemy in self.game.enemies:
-            if enemy.parent is None:
-                self.add_widget(enemy)
-                changed = True
-
-        for bullet in self.game.bullets:
-            if bullet.parent is None:
-                self.add_widget(bullet)
-                changed = True
-
-        for powerup in self.game.powerups:
-            if powerup.parent is None:
-                self.add_widget(powerup)
-                changed = True
-
-        for explosion in self.game.explosions:
-            if explosion.parent is None:
-                self.add_widget(explosion)
-                changed = True
-
-        if self.game.boss and self.game.boss.parent is None:
-            self.add_widget(self.game.boss)
-            changed = True
-
-        for enemy in self.game.enemies:
-            if not enemy.active and enemy.parent:
-                self.remove_widget(enemy)
-                changed = True
-
-        for bullet in self.game.bullets:
-            if not bullet.active and bullet.parent:
-                self.remove_widget(bullet)
-                changed = True
-
-        for powerup in self.game.powerups:
-            if not powerup.active and powerup.parent:
-                self.remove_widget(powerup)
-                changed = True
-
-        for explosion in self.game.explosions:
-            if not explosion.active and explosion.parent:
-                self.remove_widget(explosion)
-                changed = True
-
-        if changed:
-            self._fix_z_order()
-            self._cleanup_zombies()
-
     def _fix_z_order(self) -> None:
-        """确保图层顺序: 背景 → 道具 → 敌机 → Boss → 子弹 → 玩家 → 爆炸 → HUD"""
+        """确保图层顺序: 背景 → 道具 → 敌机 → Boss → 子弹 → 玩家 → 爆炸 → HUD
+
+        由 Game._attach_entity 在挂载新实体时按需调用，避免每帧全量扫描。
+        """
         # 将玩家移到 HUD 之下、其他实体之上
         if self.game.player and self.game.player.parent:
             self.remove_widget(self.game.player)
@@ -244,31 +192,6 @@ class GameWidget(FloatLayout):
         if self.hud and self.hud.parent:
             self.remove_widget(self.hud)
             self.add_widget(self.hud)
-
-    def _cleanup_zombies(self) -> None:
-        """移除僵尸 widget（实体已从游戏列表移除但 widget 还在树上）"""
-        active_ids = set()
-        if self.game.player:
-            active_ids.add(id(self.game.player))
-        for e in self.game.enemies:
-            active_ids.add(id(e))
-        for b in self.game.bullets:
-            active_ids.add(id(b))
-        for p in self.game.powerups:
-            active_ids.add(id(p))
-        for e in self.game.explosions:
-            active_ids.add(id(e))
-        if self.game.boss:
-            active_ids.add(id(self.game.boss))
-
-        to_remove = []
-        for child in self.children:
-            if hasattr(child, 'entity_type') and id(child) not in active_ids:
-                if child != self.hud:
-                    to_remove.append(child)
-
-        for zombie in to_remove:
-            self.remove_widget(zombie)
 
     def _show_game_over(self) -> None:
         """显示游戏结束界面"""
@@ -316,32 +239,19 @@ class GameWidget(FloatLayout):
         self._show_main_menu()
 
     def _clear_game_entities(self) -> None:
-        """清理游戏实体"""
-        # 移除玩家
+        """清理游戏实体 widget（逻辑清理由 game._clear_all_entities 负责）"""
+        # 玩家 widget 由 main.py 挂载，单独卸载
         if self.game.player and self.game.player.parent:
             self.remove_widget(self.game.player)
-
-        # 移除所有敌机
-        for enemy in self.game.enemies:
-            if enemy.parent:
-                self.remove_widget(enemy)
-
-        # 移除所有子弹
-        for bullet in self.game.bullets:
-            if bullet.parent:
-                self.remove_widget(bullet)
-
-        # 移除所有道具
-        for powerup in self.game.powerups:
-            if powerup.parent:
-                self.remove_widget(powerup)
-
-        # 移除所有爆炸
-        for explosion in self.game.explosions:
-            if explosion.parent:
-                self.remove_widget(explosion)
-
-        # 移除Boss
+        # 其余实体 widget 由 game._attach_entity/_detach_entity 维护，统一卸载
+        for entity in (
+            *self.game.enemies,
+            *self.game.bullets,
+            *self.game.powerups,
+            *self.game.explosions,
+        ):
+            if entity.parent:
+                self.remove_widget(entity)
         if self.game.boss and self.game.boss.parent:
             self.remove_widget(self.game.boss)
 

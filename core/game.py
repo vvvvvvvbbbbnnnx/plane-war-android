@@ -176,6 +176,25 @@ class Game:
         """窗口大小变化处理"""
         update_screen()
 
+    # ------------------------------------------------------------------
+    # 实体 widget 树维护（替代 main.py 中每帧轮询的 _update_entities/_cleanup_zombies）
+    # 实体在 spawn 时挂载、死亡/出界时卸载，widget 树始终与逻辑列表同步，
+    # 消除 O(实体数) 的每帧扫描与 O(children) 的僵尸清理。
+    # ------------------------------------------------------------------
+
+    def _attach_entity(self, entity) -> None:
+        """将实体挂到根 widget 树（若已挂载或无根则跳过），并刷新 z-order。"""
+        rw = self.root_widget
+        if rw is not None and entity.parent is None:
+            rw.add_widget(entity)
+            # 仅在挂载新实体时修正图层顺序，成本 = O(player + 爆炸 + hud) 远低于全量扫描
+            rw._fix_z_order()
+
+    def _detach_entity(self, entity) -> None:
+        """从 widget 树卸载实体（幂等）。"""
+        if entity.parent is not None:
+            entity.parent.remove_widget(entity)
+
     def start_game(self) -> None:
         """开始新游戏"""
         # 重置状态
@@ -301,6 +320,7 @@ class Game:
         )
 
         self.enemies.append(enemy)
+        self._attach_entity(enemy)
 
     def _player_shoot(self) -> None:
         """玩家射击"""
@@ -317,6 +337,7 @@ class Game:
                 self.player.top
             )
             self.bullets.append(bullet)
+            self._attach_entity(bullet)
 
         # 播放射击音效
         audio_manager.play_sfx('shoot')
@@ -344,10 +365,12 @@ class Game:
                 bullet = self.pools.acquire('bullet_enemy')
                 bullet.pos = (enemy.center_x - bullet.width / 2, enemy.y)
                 self.bullets.append(bullet)
+                self._attach_entity(bullet)
 
             # 移除出界敌机
             if not enemy.is_on_screen(margin=enemy.height):
                 self.enemies.remove(enemy)
+                self._detach_entity(enemy)
                 self.pools.release(f'enemy_{enemy.enemy_type}', enemy)
 
     def _update_bullets(self, dt: float) -> None:
@@ -358,6 +381,7 @@ class Game:
             # 移除出界子弹
             if not bullet.is_on_screen():
                 self.bullets.remove(bullet)
+                self._detach_entity(bullet)
                 pool_name = 'bullet_player' if bullet.is_player else 'bullet_enemy'
                 self.pools.release(pool_name, bullet)
 
@@ -368,6 +392,7 @@ class Game:
 
             if not powerup.is_on_screen():
                 self.powerups.remove(powerup)
+                self._detach_entity(powerup)
                 self.pools.release('powerup', powerup)
 
     def _update_explosions(self, dt: float) -> None:
@@ -376,6 +401,7 @@ class Game:
             explosion.update(dt)
             if not explosion.active:
                 self.explosions.remove(explosion)
+                self._detach_entity(explosion)
 
     def _update_boss(self, dt: float) -> None:
         """更新Boss"""
@@ -390,6 +416,7 @@ class Game:
                 bullet = self.pools.acquire('bullet_enemy')
                 bullet.pos = pos
                 self.bullets.append(bullet)
+                self._attach_entity(bullet)
 
     def _check_collisions(self) -> None:
         """检测碰撞"""
@@ -416,6 +443,7 @@ class Game:
         # 移除子弹
         if bullet in self.bullets:
             self.bullets.remove(bullet)
+            self._detach_entity(bullet)
             self.pools.release('bullet_player', bullet)
 
         if not enemy.active:
@@ -429,8 +457,7 @@ class Game:
             # 移除敌机
             if enemy in self.enemies:
                 self.enemies.remove(enemy)
-                if self.root_widget and enemy.parent:
-                    self.root_widget.remove_widget(enemy)
+                self._detach_entity(enemy)
                 self.pools.release(f'enemy_{enemy.enemy_type}', enemy)
 
             # 掉落道具
@@ -453,6 +480,7 @@ class Game:
         # 移除子弹
         if bullet in self.bullets:
             self.bullets.remove(bullet)
+            self._detach_entity(bullet)
             self.pools.release('bullet_player', bullet)
 
         if not boss.active:
@@ -467,6 +495,7 @@ class Game:
             self.trigger_shake(18.0)
 
             # 移除Boss
+            self._detach_entity(boss)
             self.boss = None
             self.boss_spawned = False
 
@@ -490,6 +519,7 @@ class Game:
         # 移除子弹
         if bullet in self.bullets:
             self.bullets.remove(bullet)
+            self._detach_entity(bullet)
             self.pools.release('bullet_enemy', bullet)
 
         # 玩家受伤
@@ -517,6 +547,7 @@ class Game:
         # 移除道具
         if powerup in self.powerups:
             self.powerups.remove(powerup)
+            self._detach_entity(powerup)
             self.pools.release('powerup', powerup)
 
         # 播放音效
@@ -529,11 +560,13 @@ class Game:
         powerup.setup_type(powerup_type)
         powerup.pos = (pos[0] - powerup.width / 2, pos[1] - powerup.height / 2)
         self.powerups.append(powerup)
+        self._attach_entity(powerup)
 
     def _create_explosion(self, pos: tuple, size: float) -> None:
         """创建爆炸效果"""
         explosion = Explosion(pos=pos, size_ratio=size / screen.real_width)
         self.explosions.append(explosion)
+        self._attach_entity(explosion)
 
         # 粒子效果
         particle_system.emit(pos[0], pos[1], 'explosion', count=15)
@@ -551,9 +584,11 @@ class Game:
             screen.real_width / 2 - self.boss.width / 2,
             screen.real_height - self.boss.height - 20
         )
+        self._attach_entity(self.boss)
 
-        # 清除所有敌机
+        # 清除所有敌机（同时卸载 widget）
         for enemy in self.enemies:
+            self._detach_entity(enemy)
             self.pools.release(f'enemy_{enemy.enemy_type}', enemy)
         self.enemies.clear()
 
@@ -605,6 +640,17 @@ class Game:
 
     def _clear_all_entities(self) -> None:
         """清空所有实体"""
+        # 卸载所有实体 widget（玩家由调用方单独处理）
+        for entity in (
+            *self.enemies,
+            *self.bullets,
+            *self.powerups,
+            *self.explosions,
+        ):
+            self._detach_entity(entity)
+        if self.boss:
+            self._detach_entity(self.boss)
+
         self.player = None
         self.enemies.clear()
         self.bullets.clear()
@@ -629,6 +675,7 @@ class Game:
         for enemy in self.enemies:
             self.score += enemy.score
             self._create_explosion(enemy.center, enemy.width)
+            self._detach_entity(enemy)
             self.pools.release(f'enemy_{enemy.enemy_type}', enemy)
         self.enemies.clear()
 
@@ -636,6 +683,7 @@ class Game:
         for bullet in self.bullets[:]:
             if not bullet.is_player:
                 self.bullets.remove(bullet)
+                self._detach_entity(bullet)
                 self.pools.release('bullet_enemy', bullet)
 
         # 对Boss造成伤害
@@ -644,6 +692,7 @@ class Game:
             if not self.boss.active:
                 self.score += self.boss.score
                 self._create_explosion(self.boss.center, self.boss.width * 1.5)
+                self._detach_entity(self.boss)
                 self.boss = None
                 self.boss_spawned = False
                 self.level += 1
