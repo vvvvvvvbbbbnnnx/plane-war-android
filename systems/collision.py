@@ -162,6 +162,11 @@ class CollisionSystem:
         # (type1, type2) -> callback
         self._collision_groups: dict[tuple[str, str], callable] = {}
 
+        # 类型预映射：entity_type -> [(other_type, callback)]
+        # 注册时双向登记，check_collisions 时按实体类型 O(1) 查找，
+        # 取代之前对每对 nearby 实体遍历全部 _collision_groups 的 O(N×M) 扫描。
+        self._type_index: dict[str, list[tuple[str, callable]]] = {}
+
     def register_collision_group(
         self,
         type1: str,
@@ -177,6 +182,11 @@ class CollisionSystem:
             callback: 碰撞回调函数 (entity1, entity2)
         """
         self._collision_groups[(type1, type2)] = callback
+        # 双向登记：type1 实体遇到 type2，type2 实体遇到 type1，都能查到。
+        # 当 type1 == type2（同类型碰撞，如敌机互撞）时只登记一次，避免重复触发。
+        self._type_index.setdefault(type1, []).append((type2, callback))
+        if type2 != type1:
+            self._type_index.setdefault(type2, []).append((type1, callback))
 
     def clear(self) -> None:
         """清空碰撞系统"""
@@ -204,10 +214,15 @@ class CollisionSystem:
             [(entity1, entity2), ...] 碰撞对列表
         """
         collisions = []
-        checked_pairs = set()  # 避免重复检测
+        checked_pairs: set[frozenset] = set()  # 单向去重
 
         for entity in self.spatial_hash:
             if not entity.active:
+                continue
+
+            # 当前实体没有注册任何碰撞关系，直接跳过（避免无谓的 nearby 查询）
+            groups = self._type_index.get(entity.entity_type)
+            if not groups:
                 continue
 
             nearby = self.spatial_hash.get_nearby(entity)
@@ -216,24 +231,25 @@ class CollisionSystem:
                 if not other.active:
                     continue
 
-                # 创建唯一配对标识（双向去重）
-                pair = (id(entity), id(other))
-                pair_rev = (id(other), id(entity))
-                if pair in checked_pairs or pair_rev in checked_pairs:
+                # frozenset 单向去重：{a,b} 与 {b,a} 相同，一次 add 即可
+                pair = frozenset((id(entity), id(other)))
+                if pair in checked_pairs:
                     continue
                 checked_pairs.add(pair)
-                checked_pairs.add(pair_rev)
 
-                # 检查碰撞组
-                for (type1, type2), callback in self._collision_groups.items():
-                    if (entity.entity_type == type1 and other.entity_type == type2):
-                        if entity.collides_with(other):
-                            collisions.append((entity, other))
-                            callback(entity, other)
-                    elif (entity.entity_type == type2 and other.entity_type == type1):
-                        if other.collides_with(entity):
-                            collisions.append((other, entity))
-                            callback(other, entity)
+                # 按实体类型 O(1) 查找该实体参与的碰撞组
+                for other_type, callback in groups:
+                    if other.entity_type == other_type:
+                        # 按 (type1, type2) 注册顺序确定回调参数顺序
+                        if self._collision_groups.get(
+                            (entity.entity_type, other_type)
+                        ) is callback:
+                            a, b = entity, other
+                        else:
+                            a, b = other, entity
+                        if a.collides_with(b):
+                            collisions.append((a, b))
+                            callback(a, b)
 
         return collisions
 
