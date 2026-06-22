@@ -3,6 +3,7 @@
 
 提供通用的对象池实现，用于减少对象创建/销毁的开销。
 """
+import warnings
 from dataclasses import dataclass
 from typing import Callable, Generic, Optional, TypeVar
 
@@ -125,6 +126,18 @@ class ObjectPool(Generic[T]):
         if obj not in self._active:
             return
 
+        # 检查是否超过最大大小：满时拒绝 release（对象保留在 active 列表中），
+        # 避免之前"先移除 active 再丢弃"导致对象既脱离 active 又不入 pool、
+        # 下次 acquire 重新创建造成的内存抖动与外部悬空引用。
+        if self.max_size > 0 and len(self._pool) >= self.max_size:
+            warnings.warn(
+                f"ObjectPool({self.factory}) 已达 max_size={self.max_size}，"
+                f"release 被拒绝（对象保留在 active 列表）",
+                RuntimeWarning,
+                stacklevel=2,
+            )
+            return
+
         # 从活动列表移除
         self._active.remove(obj)
         self._stats.current_active -= 1
@@ -132,11 +145,6 @@ class ObjectPool(Generic[T]):
         # 回调
         if self.on_release:
             self.on_release(obj)
-
-        # 检查是否超过最大大小
-        if self.max_size > 0 and len(self._pool) >= self.max_size:
-            # 不放回池中，让GC回收
-            return
 
         # 放回池中
         self._pool.append(obj)
