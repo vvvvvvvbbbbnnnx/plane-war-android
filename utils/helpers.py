@@ -10,14 +10,23 @@ from typing import Optional
 
 from kivy.utils import platform
 
+# 字体查找结果缓存：get_chinese_font 会被每个 Label 创建时调用，
+# 每次遍历数十个 os.path.exists 是无谓开销，首次确定后 memoize。
+_chinese_font_cache: Optional[str] = None
+_chinese_font_resolved: bool = False
+
 
 def get_chinese_font() -> Optional[str]:
     """
-    获取支持中文的字体路径
+    获取支持中文的字体路径（结果缓存）
 
     Returns:
         字体路径，找不到返回None
     """
+    global _chinese_font_cache, _chinese_font_resolved
+    if _chinese_font_resolved:
+        return _chinese_font_cache
+
     # Android 系统字体路径
     android_fonts = [
         '/system/fonts/NotoSansCJK-Regular.ttc',

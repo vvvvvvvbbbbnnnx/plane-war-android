@@ -1,7 +1,13 @@
 """
 飞机大战 - 入口文件
 
-启动游戏并初始化所有系统
+启动游戏并初始化所有系统。
+
+职责划分
+--------
+* ``PlaneWarApp``  —— Kivy App，负责窗口/配置/音效系统初始化与生命周期。
+* ``GameWidget``   —— 游戏主界面容器，协调背景、UI 覆盖层（菜单/HUD/暂停/结算/设置）、
+  触摸与键盘路由、以及玩家 widget 的挂载；实体 widget 的挂载/卸载由 ``Game`` 统一管理。
 """
 import os
 import sys
@@ -27,12 +33,27 @@ from ui.settings import SettingsScreen
 from utils.resources import ResourceManager
 from utils.screen import update_screen
 
+# 音效文件名 → 资源文件映射（仅在对应文件存在时加载）
+# 抽取为模块常量，便于查阅与维护，避免散落在初始化方法中。
+_SOUND_FILES: dict[str, str] = {
+    'shoot': 'shoot.wav',
+    'explosion': 'explosion.wav',
+    'powerup': 'powerup.wav',
+    'hit': 'hit.wav',
+    'bomb': 'bomb.wav',
+    'boss_appear': 'boss.wav',
+    'boss_death': 'boss_death.wav',
+    'button': 'button.wav',
+    'bgm': 'bgm.wav',
+}
+
 
 class GameWidget(FloatLayout):
     """
     游戏主界面容器
 
-    管理所有游戏元素和UI的显示
+    管理所有游戏元素和UI的显示。本身不持有游戏逻辑，逻辑由 ``Game`` 单例负责；
+    本类负责：滚动背景、UI 覆盖层的添加/移除、触摸与键盘事件路由、玩家 widget 挂载。
     """
 
     def __init__(self, **kwargs):
@@ -45,7 +66,7 @@ class GameWidget(FloatLayout):
         # 背景
         self._setup_background()
 
-        # UI组件
+        # UI组件（按需创建）
         self.hud: HUD = None
         self.menu: MainMenu = None
         self.pause_menu: PauseMenu = None
@@ -55,18 +76,18 @@ class GameWidget(FloatLayout):
         # 显示主菜单
         self._show_main_menu()
 
-        # 启动游戏循环
+        # 启动游戏循环（60 FPS）
         Clock.schedule_interval(self._update, 1/60)
 
-        # 绑定窗口大小变化
+        # 绑定窗口大小变化与键盘事件
         Window.bind(on_resize=self._on_window_resize)
         Window.bind(on_keyboard=self._on_keyboard)
 
     def _setup_background(self) -> None:
-        """设置滚动背景"""
+        """设置滚动背景：双图拼接实现无缝滚动；无背景图时使用纯色。"""
         bg_path = ResourceManager.get_image_path('background.png')
         if bg_path:
-            # 创建两个背景实现滚动效果
+            # 创建两个背景实现滚动效果（上下拼接，循环位移）
             self.bg1 = Image(
                 source=bg_path,
                 allow_stretch=True,
@@ -99,9 +120,7 @@ class GameWidget(FloatLayout):
 
     def _show_settings(self) -> None:
         """显示设置界面"""
-        self.settings_screen = SettingsScreen(
-            on_close=self._close_settings
-        )
+        self.settings_screen = SettingsScreen(on_close=self._close_settings)
         self.add_widget(self.settings_screen)
 
     def _close_settings(self) -> None:
@@ -111,7 +130,7 @@ class GameWidget(FloatLayout):
             self.settings_screen = None
 
     def _start_game(self) -> None:
-        """开始游戏"""
+        """开始游戏：移除菜单、创建HUD、启动游戏逻辑、挂载玩家。"""
         # 移除菜单
         if self.menu:
             self.remove_widget(self.menu)
@@ -124,12 +143,12 @@ class GameWidget(FloatLayout):
         # 开始游戏
         self.game.start_game()
 
-        # 添加玩家到界面
+        # 添加玩家到界面（玩家 widget 由 main.py 挂载，其余实体由 game 管理）
         if self.game.player:
             self.add_widget(self.game.player)
 
     def _update(self, dt: float) -> None:
-        """游戏主更新循环"""
+        """游戏主更新循环：滚动背景 + 游戏逻辑 + HUD + 结算检测。"""
         # 更新滚动背景
         self._update_background(dt)
 
@@ -159,14 +178,14 @@ class GameWidget(FloatLayout):
                 self._show_game_over()
 
     def _update_background(self, dt: float) -> None:
-        """更新滚动背景"""
+        """更新滚动背景：双图循环位移。"""
         if hasattr(self, 'bg1') and hasattr(self, 'bg2'):
             # 滚动背景
             scroll = self.bg_scroll_speed * dt * 60
             self.bg1.y -= scroll
             self.bg2.y -= scroll
 
-            # 循环滚动
+            # 循环滚动：完全离开屏幕后重置到顶部
             if self.bg1.y <= -Window.height:
                 self.bg1.y = Window.height
             if self.bg2.y <= -Window.height:
@@ -204,7 +223,7 @@ class GameWidget(FloatLayout):
         self.add_widget(self.game_over_screen)
 
     def _restart_game(self) -> None:
-        """重新开始游戏"""
+        """重新开始游戏：移除结算界面、清理实体、重新开始、挂载玩家。"""
         # 移除游戏结束界面
         if self.game_over_screen:
             self.remove_widget(self.game_over_screen)
@@ -221,7 +240,7 @@ class GameWidget(FloatLayout):
             self.add_widget(self.game.player)
 
     def _quit_to_menu(self) -> None:
-        """返回主菜单"""
+        """返回主菜单：移除结算界面与HUD、清理实体、显示主菜单。"""
         # 移除游戏结束界面
         if self.game_over_screen:
             self.remove_widget(self.game_over_screen)
@@ -239,7 +258,11 @@ class GameWidget(FloatLayout):
         self._show_main_menu()
 
     def _clear_game_entities(self) -> None:
-        """清理游戏实体 widget（逻辑清理由 game._clear_all_entities 负责）"""
+        """清理游戏实体 widget（逻辑清理由 game._clear_all_entities 负责）。
+
+        职责边界：玩家 widget 由 main.py 挂载，单独卸载；
+        其余实体 widget 由 game._attach_entity/_detach_entity 维护，此处统一卸载。
+        """
         # 玩家 widget 由 main.py 挂载，单独卸载
         if self.game.player and self.game.player.parent:
             self.remove_widget(self.game.player)
@@ -273,13 +296,13 @@ class GameWidget(FloatLayout):
         self.game.resume_game()
 
     def _on_window_resize(self, instance, width, height) -> None:
-        """窗口大小变化"""
+        """窗口大小变化：更新屏幕适配器与背景矩形。"""
         update_screen()
         if hasattr(self, 'bg_rect'):
             self.bg_rect.size = (width, height)
 
     def _on_keyboard(self, window, key, *args) -> bool:
-        """键盘事件"""
+        """键盘事件：ESC 切换暂停/恢复。"""
         if key == 27:  # ESC键
             if self.game.state == GameState.PLAYING:
                 self._show_pause_menu()
@@ -290,28 +313,26 @@ class GameWidget(FloatLayout):
         return False
 
     def on_touch_down(self, touch) -> bool:
-        """触摸按下"""
+        """触摸按下：游戏中交给游戏处理，否则交给UI。"""
         if self.game.state == GameState.PLAYING:
             return self.game.on_touch_down(touch)
         return super().on_touch_down(touch)
 
     def on_touch_move(self, touch) -> bool:
-        """触摸移动"""
+        """触摸移动：游戏中交给游戏处理，否则交给UI。"""
         if self.game.state == GameState.PLAYING:
             return self.game.on_touch_move(touch)
         return super().on_touch_move(touch)
 
     def on_touch_up(self, touch) -> bool:
-        """触摸抬起"""
+        """触摸抬起：游戏中交给游戏处理，否则交给UI。"""
         if self.game.state == GameState.PLAYING:
             return self.game.on_touch_up(touch)
         return super().on_touch_up(touch)
 
 
 class PlaneWarApp(App):
-    """
-    飞机大战应用
-    """
+    """飞机大战应用"""
 
     def build(self):
         # 设置全屏
@@ -326,24 +347,9 @@ class PlaneWarApp(App):
         return GameWidget()
 
     def _init_audio(self) -> None:
-        """初始化音效系统"""
-        # 音效配置（如果文件存在则加载）
+        """初始化音效系统：按 ``_SOUND_FILES`` 加载存在的音效文件。"""
         sound_config = {}
-
-        # 检查音效文件
-        sound_files = {
-            'shoot': 'shoot.wav',
-            'explosion': 'explosion.wav',
-            'powerup': 'powerup.wav',
-            'hit': 'hit.wav',
-            'bomb': 'bomb.wav',
-            'boss_appear': 'boss.wav',
-            'boss_death': 'boss_death.wav',
-            'button': 'button.wav',
-            'bgm': 'bgm.wav',
-        }
-
-        for name, filename in sound_files.items():
+        for name, filename in _SOUND_FILES.items():
             path = ResourceManager.get_sound_path(filename)
             if path:
                 sound_config[name] = path
@@ -352,13 +358,13 @@ class PlaneWarApp(App):
             audio_manager.load_sounds(sound_config)
 
     def on_pause(self) -> bool:
-        """应用暂停"""
+        """应用暂停（Android 生命周期）：暂停游戏。"""
         if self.root and hasattr(self.root, 'game'):
             self.root.game.pause_game()
         return True
 
     def on_resume(self) -> None:
-        """应用恢复"""
+        """应用恢复（Android 生命周期）：恢复游戏。"""
         if self.root and hasattr(self.root, 'game'):
             self.root.game.resume_game()
 

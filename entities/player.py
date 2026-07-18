@@ -120,8 +120,14 @@ class Player(Entity):
         """
         受到伤害
 
+        内部处理「血量归零 → 扣命 → 复活回血」流程：
+        * 受护盾/无敌保护时直接返回 False（不受伤）。
+        * 受伤扣 1 血并降一级武器，触发短暂无敌。
+        * 血量归零时扣 1 命；仍有剩余生命则回满血并延长无敌时间。
+        * 生命耗尽（lives <= 0）时不再复活，返回 True 表示真正死亡。
+
         Returns:
-            是否死亡
+            是否真正死亡（生命耗尽）
         """
         if self.shield or self.invincible:
             return False
@@ -136,7 +142,7 @@ class Player(Entity):
         if self.health <= 0:
             self.lives -= 1
             if self.lives > 0:
-                # 复活
+                # 复活：回满血并给予双倍无敌时间
                 self.health = self.max_health
                 self.invincible = True
                 self.invincible_time = self._invincible_time * 2

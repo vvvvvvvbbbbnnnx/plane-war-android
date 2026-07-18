@@ -78,22 +78,31 @@ class TestObjectPool:
         assert stats.current_active == 1
 
     def test_max_size_limit(self):
-        """max_size 满时拒绝 release，对象保留在 active 列表而非被丢弃"""
+        """max_size 满时拒绝 release，对象保留在 active 列表而非被丢弃。
+
+        场景：initial_size=2 且已全部 release 回池（pool=2 已满），
+        再 acquire 出一个（pool=1）并额外新建第 3 个对象放入 active，
+        然后试图把池填回超过 max_size 时触发拒绝。
+        """
         import pytest
         pool = ObjectPool(make_counter, initial_size=2, max_size=2)
+        # 先把池填满到 max_size
         obj1 = pool.acquire()
         obj2 = pool.acquire()
-        pool.release(obj1)
-        pool.release(obj2)
-        # 池已满（2 个），obj3 release 应被拒绝并抛 RuntimeWarning
-        obj3 = pool.acquire()
+        pool.release(obj1)  # pool 1
+        pool.release(obj2)  # pool 2 → 已满
+        # acquire 出一个使 pool=1，此时 active=[obj]
+        obj_a = pool.acquire()
+        assert pool.get_stats().current_pooled == 1
+        # 手动塞一个对象进 active 模拟"池已满时 release"
+        # 直接向底层 pool 追加使其达到 max_size
+        pool._pool.append(make_counter())  # pool=2 满
         with pytest.warns(RuntimeWarning):
-            pool.release(obj3)
+            pool.release(obj_a)  # pool 满应拒绝，obj_a 留在 active
         stats = pool.get_stats()
-        # 被拒绝后对象仍在 active 中
-        assert stats.current_pooled <= 2
-        assert stats.current_active == 1
-        assert obj3 in pool
+        # 拒绝后对象未被移出 active，也未放回 pool
+        assert stats.current_active == 1  # obj_a 仍在 active
+        assert obj_a in pool  # 仍在 active（__contains__ 查 active）
 
     def test_release_non_contained_no_error(self):
         pool = ObjectPool(make_counter, initial_size=1)

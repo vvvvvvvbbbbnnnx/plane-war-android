@@ -1,22 +1,21 @@
 """
 飞机大战 - 暂停菜单
+
+半透明遮罩 + 继续/重新开始/返回主菜单 三个按钮。
 """
 from typing import Callable, Optional
 
-from kivy.graphics import Color, Rectangle
 from kivy.uix.button import Button
 from kivy.uix.label import Label
 
-from core.scene import Scene
 from systems.audio import audio_manager
+from ui.base import OverlayScene
 from utils.helpers import get_chinese_font
 from utils.screen import screen
 
 
-class PauseMenu(Scene):
-    """
-    暂停菜单场景
-    """
+class PauseMenu(OverlayScene):
+    """暂停菜单场景"""
 
     def __init__(
         self,
@@ -33,11 +32,9 @@ class PauseMenu(Scene):
         self._create_ui()
 
     def _create_ui(self) -> None:
-        """创建UI"""
-        # 半透明背景
-        with self.canvas.before:
-            Color(0, 0, 0, 0.7)
-            self._bg_rect = Rectangle(pos=self.pos, size=self.size)
+        """创建UI：半透明遮罩 + 标题 + 三个按钮。"""
+        # 半透明黑色遮罩
+        self._setup_background((0, 0, 0, 0.7))
 
         # 标题
         self.title = Label(
@@ -106,7 +103,3 @@ class PauseMenu(Scene):
         audio_manager.play_sfx('button')
         if self.on_quit:
             self.on_quit()
-
-    def on_size(self, *args) -> None:
-        """窗口大小变化"""
-        self._bg_rect.size = self.size

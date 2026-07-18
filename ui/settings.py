@@ -1,39 +1,42 @@
 """
 飞机大战 - 设置界面
+
+提供音效开关、音乐/音效音量、难度选择，并持久化到存档系统。
 """
 from typing import Callable, Optional
 
 from kivy.clock import Clock
-from kivy.graphics import Color, Rectangle
 from kivy.uix.button import Button
 from kivy.uix.label import Label
 from kivy.uix.slider import Slider
 from kivy.uix.togglebutton import ToggleButton
 
-from core.scene import Scene
 from systems.audio import audio_manager
 from systems.save import save_manager
+from ui.base import OverlayScene
 from utils.helpers import get_chinese_font
 from utils.screen import screen
 
 
-class SettingsScreen(Scene):
+class SettingsScreen(OverlayScene):
+    """设置界面场景"""
 
     def __init__(self, on_back: Optional[Callable] = None, on_close: Optional[Callable] = None, **kwargs):
         super().__init__(**kwargs)
+        # on_back 与 on_close 互为别名，兼容不同调用方
         self.on_back = on_back or on_close
         self._font = get_chinese_font()
         self._difficulty = 'normal'
         self._difficulty_btns = {}
+        # _initialized 标记用于避免构建 UI 期间触发控件回调而写存档
         self._initialized = False
         self._create_ui()
         # 延迟加载设置，避免初始化时触发 save
         Clock.schedule_once(lambda dt: self._load_settings(), 0)
 
     def _create_ui(self) -> None:
-        with self.canvas.before:
-            Color(0.05, 0.05, 0.15, 1)
-            self._bg_rect = Rectangle(pos=self.pos, size=self.size)
+        """创建UI：背景、标题、音效开关、音量滑块、难度按钮、返回按钮。"""
+        self._setup_background((0.05, 0.05, 0.15, 1))
 
         # 标题
         self.title = Label(
@@ -109,6 +112,7 @@ class SettingsScreen(Scene):
             color=(1, 1, 1, 1),
             halign='right',
         ))
+        # 难度按钮：简单/普通/困难，选中项高亮蓝色
         for text, cx, color in [
             ('简单', 0.5, (0.3, 0.3, 0.3, 1)),
             ('普通', 0.67, (0.2, 0.6, 1, 1)),
@@ -140,6 +144,7 @@ class SettingsScreen(Scene):
         self.add_widget(self.back_btn)
 
     def _load_settings(self, *args) -> None:
+        """从存档加载设置并同步到控件（仅在初始化完成后才允许写回）。"""
         settings = save_manager.load_settings()
         self._difficulty = settings.get('difficulty', 'normal')
         self.music_slider.value = settings.get('music_volume', 0.7)
@@ -156,6 +161,7 @@ class SettingsScreen(Scene):
         self._initialized = True
 
     def _save_settings(self) -> None:
+        """持久化当前控件状态到存档（初始化阶段跳过）。"""
         if not self._initialized:
             return
         save_manager.save_settings({
@@ -166,6 +172,7 @@ class SettingsScreen(Scene):
         })
 
     def _on_difficulty_pressed(self, instance) -> None:
+        """难度按钮点击：切换难度并高亮。"""
         audio_manager.play_sfx('button')
         self._difficulty = instance.text
         for btn in self._difficulty_btns.values():
@@ -174,24 +181,23 @@ class SettingsScreen(Scene):
         self._save_settings()
 
     def _on_sound_toggle(self, instance) -> None:
+        """音效开关切换：同步文本与全局开关。"""
         instance.text = '开' if instance.state == 'down' else '关'
         audio_manager.enabled = instance.state == 'down'
         self._save_settings()
 
     def _on_music_volume_change(self, instance, value) -> None:
+        """音乐音量滑块变化"""
         audio_manager.set_music_volume(value)
         self._save_settings()
 
     def _on_sfx_volume_change(self, instance, value) -> None:
+        """音效音量滑块变化"""
         audio_manager.set_sfx_volume(value)
         self._save_settings()
 
     def _on_back_pressed(self, instance) -> None:
+        """返回按钮点击"""
         audio_manager.play_sfx('button')
         if self.on_back:
             self.on_back()
-
-    def on_size(self, *args) -> None:
-        if hasattr(self, '_bg_rect'):
-            self._bg_rect.pos = self.pos
-            self._bg_rect.size = self.size

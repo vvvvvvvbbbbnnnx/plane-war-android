@@ -1,10 +1,12 @@
 """
 飞机大战 - 道具
+
+四种道具：health（回血）/ weapon（武器升级）/ shield（护盾）/ bomb（炸弹）。
+有贴图时用贴图渲染，无贴图时按类型用矢量图形绘制图标。
 """
 import random
 
 from kivy.graphics import Color, Ellipse, Line, Rectangle
-from kivy.properties import StringProperty
 
 from config.settings import get_config
 from core.entity import Entity
@@ -18,8 +20,6 @@ class PowerUp(Entity):
     Attributes:
         powerup_type: 道具类型 ('health', 'weapon', 'shield', 'bomb')
     """
-
-    powerup_type = StringProperty('health')
 
     # 道具颜色配置
     TYPE_COLORS: dict[str, tuple[float, float, float]] = {
@@ -101,7 +101,7 @@ class PowerUp(Entity):
             self.active = False
 
     def draw(self) -> None:
-        """绘制道具"""
+        """绘制道具：有贴图则直接返回；无贴图时按类型用矢量图形绘制对应图标。"""
         if self._image_loaded:
             return
 
@@ -171,7 +171,7 @@ class PowerUp(Entity):
                 )
 
     def apply(self, player) -> None:
-        """应用道具效果到玩家"""
+        """将道具效果应用到玩家：回血/武器升级/护盾/炸弹。"""
         if self.powerup_type == 'health':
             player.heal(1)
         elif self.powerup_type == 'weapon':

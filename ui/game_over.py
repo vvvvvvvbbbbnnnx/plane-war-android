@@ -1,23 +1,22 @@
 """
 飞机大战 - 游戏结束界面
+
+显示最终分数、到达关卡、新纪录提示，以及重新开始/返回主菜单按钮。
 """
 from typing import Callable, Optional
 
-from kivy.graphics import Color, Rectangle
 from kivy.uix.button import Button
 from kivy.uix.label import Label
 
-from core.scene import Scene
 from systems.audio import audio_manager
 from systems.save import save_manager
+from ui.base import OverlayScene
 from utils.helpers import get_chinese_font
 from utils.screen import screen
 
 
-class GameOverScreen(Scene):
-    """
-    游戏结束界面场景
-    """
+class GameOverScreen(OverlayScene):
+    """游戏结束界面场景"""
 
     def __init__(
         self,
@@ -36,11 +35,9 @@ class GameOverScreen(Scene):
         self._create_ui()
 
     def _create_ui(self) -> None:
-        """创建UI"""
-        # 半透明背景
-        with self.canvas.before:
-            Color(0, 0, 0, 0.8)
-            self._bg_rect = Rectangle(pos=self.pos, size=self.size)
+        """创建UI：遮罩 + 标题 + 分数/关卡 + 新纪录提示 + 按钮。"""
+        # 半透明黑色遮罩
+        self._setup_background((0, 0, 0, 0.8))
 
         # 游戏结束标题
         self.title = Label(
@@ -75,7 +72,8 @@ class GameOverScreen(Scene):
         )
         self.add_widget(self.level_label)
 
-        # 新纪录提示
+        # 新纪录提示（仅当当前分数超过历史最高分时显示；
+        # 注意 game.game_over 已先行 save_high_score，故此处比较为刷新后的状态）
         high_score = save_manager.get_high_score()
         if self.score > high_score:
             self.new_record_label = Label(
@@ -125,7 +123,3 @@ class GameOverScreen(Scene):
         audio_manager.play_sfx('button')
         if self.on_quit:
             self.on_quit()
-
-    def on_size(self, *args) -> None:
-        """窗口大小变化"""
-        self._bg_rect.size = self.size

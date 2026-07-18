@@ -188,13 +188,20 @@ class ParticleSystem:
         """
         更新所有粒子
 
-        Args:
-            dt: 时间增量
+        使用原地双指针压缩取代「复制列表 + 逐个 remove」：
+        避免每帧 O(n) 的列表拷贝与 O(n²) 的逐个 remove，整体降为单趟 O(n)。
         """
-        for particle in self.particles[:]:
+        particles = self.particles
+        write = 0
+        for read in range(len(particles)):
+            particle = particles[read]
             particle.update(dt)
-            if not particle.active:
-                self.particles.remove(particle)
+            if particle.active:
+                # 仍存活的粒子前移到写指针位置
+                particles[write] = particle
+                write += 1
+        # 截断尾部已失效的粒子
+        del particles[write:]
 
     def clear(self) -> None:
         """清空所有粒子"""

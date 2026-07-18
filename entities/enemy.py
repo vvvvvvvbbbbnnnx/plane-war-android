@@ -1,5 +1,12 @@
 """
 飞机大战 - 敌机 (多移动模式 + 被击闪白)
+
+设计要点
+--------
+* 数值属性（血量/速度/分数/尺寸）来自 ``config.enemies``（EnemyConfig）。
+* 移动模式与颜色为「显示层」属性，不在 EnemyConfig 中，故由 ``TYPE_CONFIGS``
+  提供；``_setup_type`` 优先读 config，``TYPE_CONFIGS`` 兼作兜底与移动模式来源。
+* 玩家引用通过 ``_get_player`` 延迟导入 ``core.game`` 获取，避免反向穿透 widget 树。
 """
 import math
 
@@ -20,6 +27,7 @@ class Enemy(Entity):
     score = NumericProperty(100)
     move_pattern = StringProperty('straight')
 
+    # 各敌机类型的显示/移动配置（数值属性以 config.enemies 为准，此处提供移动模式与兜底值）
     TYPE_CONFIGS = {
         'normal': {
             'width_ratio': 0.08, 'height_ratio': 0.05,
@@ -96,7 +104,23 @@ class Enemy(Entity):
         if self.y < -self.height * 2:
             self.active = False
 
+    def _get_player(self):
+        """获取玩家引用（延迟导入 game 单例，避免与 core.game 循环导入）。
+
+        取代此前 ``self.parent.game.player`` 的反向穿透：不再依赖 widget 树结构，
+        且在敌机尚未挂载到根 widget 时也能正确获取玩家。
+        """
+        from core.game import get_game
+        return get_game().player
+
     def _apply_move_pattern(self, dt: float) -> None:
+        """根据移动模式更新横向/纵向速度。
+
+        支持三种模式：
+        * sine    — 正弦摆动（普通敌机）
+        * zigzag  — 左右折返（快速敌机）
+        * charge  — 先缓后快下冲并追踪玩家 X 坐标（坦克敌机）
+        """
         p = self.move_pattern
         t = self._move_timer
 
@@ -113,17 +137,18 @@ class Enemy(Entity):
                 self.velocity_x = self.speed * 2.5
 
         elif p == 'charge':
+            # 屏幕上半段缓速接近，过线后加速下冲
             if self.y > screen.real_height * 0.65:
                 self.velocity_y = -self.speed * 0.5
             else:
                 self.velocity_y = -self.speed * 2.5
-            if self.parent:
-                game_root = self.parent
-                player_holder = getattr(game_root, 'game', None)
-                if player_holder and player_holder.player:
-                    dx = player_holder.player.center_x - self.center_x
-                    self.velocity_x = max(-self.speed, min(self.speed, dx * 0.8))
+            # 追踪玩家横向位置（限速，避免瞬移）
+            player = self._get_player()
+            if player:
+                dx = player.center_x - self.center_x
+                self.velocity_x = max(-self.speed, min(self.speed, dx * 0.8))
 
+        # 边界钳制：撞墙后折返方向，避免飞出屏幕
         if self.x < 0:
             self.x = 0
             if p == 'zigzag':
@@ -134,9 +159,15 @@ class Enemy(Entity):
                 self.velocity_x = -abs(self.velocity_x)
 
     def should_shoot(self) -> bool:
+        """按射击概率随机决定是否开火（每帧独立判定）。"""
         return chance(self._shoot_prob)
 
     def take_damage(self, amount: int = 1) -> bool:
+        """承受伤害：扣血，血量归零则标记失活；存活时触发短暂闪白特效。
+
+        Returns:
+            是否死亡（active 被置为 False）
+        """
         self.health -= amount
         if self.health <= 0:
             self.health = 0
@@ -146,6 +177,10 @@ class Enemy(Entity):
         return False
 
     def draw(self) -> None:
+        """绘制敌机：优先使用贴图；无贴图时按类型用线条/矩形绘制矢量外形。
+
+        被击中时（``_flash_timer > 0``）叠加白色半透明矩形作为闪白反馈。
+        """
         flash = self._flash_timer > 0
         color = (1, 1, 1) if flash else getattr(self, '_color', (1, 0.2, 0.2))
         if self._image_loaded:

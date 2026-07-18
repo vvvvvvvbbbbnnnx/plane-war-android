@@ -53,12 +53,12 @@ class AudioManager:
             sound_config: {name: path} 音效配置
         """
         for name, path in sound_config.items():
-                sound = SoundLoader.load(path)
-                if sound:
-                    self.sounds[name] = sound
-                    print(f"[AudioManager] 加载音效: {name}")
-                else:
-                    print(f"[AudioManager] 加载失败: {name} ({path})")
+            sound = SoundLoader.load(path)
+            if sound:
+                self.sounds[name] = sound
+                print(f"[AudioManager] 加载音效: {name}")
+            else:
+                print(f"[AudioManager] 加载失败: {name} ({path})")
 
     def play_sfx(self, name: str) -> None:
         """

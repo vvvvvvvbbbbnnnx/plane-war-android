@@ -240,7 +240,8 @@ class CollisionSystem:
                 # 按实体类型 O(1) 查找该实体参与的碰撞组
                 for other_type, callback in groups:
                     if other.entity_type == other_type:
-                        # 按 (type1, type2) 注册顺序确定回调参数顺序
+                        # 确定回调参数顺序：以 (type1, type2) 注册顺序为准，
+                        # 使 callback(a, b) 的 a/b 与注册时一致。
                         if self._collision_groups.get(
                             (entity.entity_type, other_type)
                         ) is callback:

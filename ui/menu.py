@@ -1,23 +1,22 @@
 """
 飞机大战 - 主菜单
+
+显示游戏标题、最高分、开始/设置按钮与操作说明。
 """
 from typing import Callable, Optional
 
-from kivy.graphics import Color, Rectangle
 from kivy.uix.button import Button
 from kivy.uix.label import Label
 
-from core.scene import Scene
 from systems.audio import audio_manager
 from systems.save import save_manager
+from ui.base import OverlayScene
 from utils.helpers import get_chinese_font
 from utils.screen import screen
 
 
-class MainMenu(Scene):
-    """
-    主菜单场景
-    """
+class MainMenu(OverlayScene):
+    """主菜单场景"""
 
     def __init__(self, on_start_game: Optional[Callable] = None, **kwargs):
         super().__init__(**kwargs)
@@ -26,11 +25,9 @@ class MainMenu(Scene):
         self._create_ui()
 
     def _create_ui(self) -> None:
-        """创建UI"""
-        # 背景
-        with self.canvas.before:
-            Color(0.05, 0.05, 0.15, 1)
-            self._bg_rect = Rectangle(pos=self.pos, size=self.size)
+        """创建UI：背景、标题、最高分、按钮、操作说明。"""
+        # 深色背景
+        self._setup_background((0.05, 0.05, 0.15, 1))
 
         # 标题
         self.title = Label(
@@ -92,27 +89,18 @@ class MainMenu(Scene):
         self.add_widget(self.instructions)
 
     def _on_start_pressed(self, instance) -> None:
-        """开始按钮点击"""
-        # 播放按钮音效
+        """开始按钮点击：播放音效并触发回调。"""
         audio_manager.play_sfx('button')
-
-        # 回调
         if self.on_start_game:
             self.on_start_game()
 
     def _on_settings_pressed(self, instance) -> None:
-        """设置按钮点击"""
+        """设置按钮点击：通过父级 GameWidget 打开设置界面。"""
         audio_manager.play_sfx('button')
-        # 打开设置界面
         if self.parent and hasattr(self.parent, '_show_settings'):
             self.parent._show_settings()
 
     def on_enter(self) -> None:
-        """进入场景"""
+        """进入场景：刷新最高分显示。"""
         super().on_enter()
-        # 更新最高分
         self.high_score_label.text = f'最高分: {save_manager.get_high_score()}'
-
-    def on_size(self, *args) -> None:
-        """窗口大小变化"""
-        self._bg_rect.size = self.size
