@@ -13,10 +13,12 @@ package.domain = org.game
 source.dir = .
 
 # (list) Source files to include (let empty to include all the files)
-source.include_exts = py,png,jpg,kv,atlas,json
+# 必须包含 wav（音效）与 ttf/otf/ttc（字体），否则 APK 不含这些资源，
+# 会导致 Android 上按键音效不响、中文显示为方块。
+source.include_exts = py,png,jpg,kv,atlas,json,wav,ttf,otf,ttc
 
 # (str) Application versioning
-version = 1.0.31
+version = 1.0.32
 
 # (list) Application requirements
 requirements = python3,kivy

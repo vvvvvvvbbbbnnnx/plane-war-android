@@ -27,6 +27,19 @@ def get_chinese_font() -> Optional[str]:
     if _chinese_font_resolved:
         return _chinese_font_cache
 
+    # 1) 优先使用项目自带字体（打包进 APK，跨平台一致，最可靠）
+    try:
+        from utils.resources import ResourceManager
+        for fname in ('NotoSansSC-Regular.otf', 'noto.ttf', 'font.ttf'):
+            p = ResourceManager.get_font_path(fname)
+            if p and os.path.exists(p):
+                _chinese_font_cache = p
+                _chinese_font_resolved = True
+                return p
+    except Exception:
+        pass
+
+    # 2) 系统字体兜底
     # Android 系统字体路径
     android_fonts = [
         '/system/fonts/NotoSansCJK-Regular.ttc',
@@ -70,11 +83,16 @@ def get_chinese_font() -> Optional[str]:
     else:
         fonts = android_fonts + windows_fonts + macos_fonts + linux_fonts
 
-    # 查找存在的字体
+    # 查找存在的系统字体
     for font_path in fonts:
         if os.path.exists(font_path):
-            return os.path.normpath(font_path)
+            _chinese_font_cache = os.path.normpath(font_path)
+            _chinese_font_resolved = True
+            return _chinese_font_cache
 
+    # 全部找不到：缓存 None，避免每次调用都反复查找
+    _chinese_font_cache = None
+    _chinese_font_resolved = True
     return None
 
 

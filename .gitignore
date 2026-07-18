@@ -34,3 +34,6 @@ venv/
 # Temp
 *.tmp
 *.log
+
+# WorkBuddy 本地工作目录（记忆/缓存，不应入库）
+.workbuddy/

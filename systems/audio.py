@@ -71,10 +71,15 @@ class AudioManager:
             return
 
         sound = self.sounds[name]
-        sound.volume = self.sfx_volume
-        if sound.state == 'play':
+        try:
+            sound.volume = self.sfx_volume
+            # 无条件 stop + play：保证快速连击（如连续按键）时音效从头重播。
+            # 此前用 ``if sound.state == 'play'`` 判断在部分音频 provider 下不可靠，
+            # 会导致按键音效偶发不响。
             sound.stop()
-        sound.play()
+            sound.play()
+        except Exception as e:
+            print(f"[AudioManager] 播放音效失败 {name}: {e}")
 
     def play_music(self, name: str, loop: bool = True) -> None:
         """
